@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>散光怎么办？研究发现散光大多源于这5个习惯</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg-primary: #f6f1eb;
+  --bg-card: #fffcf8;
+  --bg-sidebar: #eee8df;
+  --text-primary: #2c2418;
+  --text-secondary: #6b5e4f;
+  --text-tertiary: #9e9182;
+  --accent: #c0793c;
+  --accent-light: rgba(192,121,60,0.12);
+  --accent-dark: #a8662e;
+  --border: #e4ddd3;
+  --border-light: #ede7de;
+  --tag-bg: #f0e8dc;
+  --highlight: #fff3e0;
+  --shadow-sm: 0 1px 3px rgba(44,36,24,0.06);
+  --shadow-md: 0 4px 12px rgba(44,36,24,0.08);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --transition: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  line-height: 1.85;
+  font-size: 15.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+  position: fixed; top: 0; left: 0; z-index: 1000;
+  height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--accent), #e8a85c);
+  transition: width 0.15s ease-out;
+  box-shadow: 0 0 6px rgba(192,121,60,0.4);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  position: fixed; top: 0; left: -300px;
+  width: 280px; height: 100vh;
+  background: var(--bg-sidebar);
+  z-index: 900;
+  display: flex; flex-direction: column;
+  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 4px 0 20px rgba(44,36,24,0.1);
+}
+.sidebar.open { left: 0; }
+
+.sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--text-primary);
+}
+.sidebar-close {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; color: var(--text-tertiary);
+  border-radius: 50%; transition: all 0.2s;
+}
+.sidebar-close:hover { background: var(--border-light); color: var(--text-primary); }
+
+.sidebar-body {
+  flex: 1; overflow-y: auto; padding: 12px 0;
+}
+.sidebar-body::-webkit-scrollbar { width: 4px; }
+.sidebar-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sidebar-chapter-group { margin-bottom: 4px; }
+
+.sidebar-chapter-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  font-size: 14px; color: var(--text-secondary);
+  transition: all 0.2s; user-select: none;
+}
+.sidebar-chapter-link:hover { background: rgba(192,121,60,0.06); color: var(--text-primary); }
+.sidebar-chapter-link.active { color: var(--accent); font-weight: 500; }
+
+.sidebar-chapter-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 22px;
+  font-size: 11px; font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--border-light);
+  border-radius: 4px;
+}
+.sidebar-chapter-link.active .sidebar-chapter-num {
+  background: var(--accent-light); color: var(--accent);
+}
+
+.sidebar-expand-icon {
+  margin-left: auto; font-size: 10px; color: var(--text-tertiary);
+  transition: transform 0.2s;
+}
+.sidebar-chapter-link.active .sidebar-expand-icon { transform: rotate(90deg); }
+
+.sidebar-sub-list {
+  list-style: none; max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.sidebar-sub-list.expanded { max-height: 300px; }
+
+.sidebar-sub-link {
+  display: block; padding: 6px 20px 6px 56px;
+  font-size: 13px; color: var(--text-tertiary);
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none;
+}
+.sidebar-sub-link:hover { color: var(--accent); }
+.sidebar-sub-link.active { color: var(--accent); font-weight: 500; }
+
+.sidebar-progress {
+  padding: 16px 20px; border-top: 1px solid var(--border);
+  background: var(--bg-sidebar);
+}
+.sidebar-progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.sidebar-progress-bar {
+  height: 4px; background: var(--border);
+  border-radius: 2px; overflow: hidden;
+}
+.sidebar-progress-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--accent), #e8a85c);
+  border-radius: 2px; transition: width 0.2s;
+}
+
+/* ===== Sidebar Toggle ===== */
+.sidebar-toggle {
+  position: fixed; left: 12px; top: 50%;
+  transform: translateY(-50%); z-index: 800;
+  width: 40px; height: 40px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s; color: var(--text-secondary);
+  font-size: 16px;
+}
+.sidebar-toggle:hover {
+  background: var(--accent); color: white;
+  border-color: var(--accent);
+  transform: translateY(-50%) scale(1.08);
+}
+.sidebar-toggle.hidden { opacity: 0; pointer-events: none; }
+
+/* ===== Sidebar Overlay ===== */
+.sidebar-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(44,36,24,0.3); z-index: 850;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* ===== Page Wrapper ===== */
+.page-wrapper {
+  max-width: 820px; margin: 0 auto; padding: 0 24px;
+}
+
+/* ===== Cover Section ===== */
+.cover-section {
+  text-align: center; padding: 80px 20px 50px;
+}
+.cover-badge {
+  display: inline-block;
+  padding: 4px 16px; margin-bottom: 24px;
+  font-size: 12px; font-weight: 500; letter-spacing: 1px;
+  color: var(--accent); background: var(--accent-light);
+  border-radius: 20px;
+}
+.cover-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 32px; font-weight: 700;
+  color: var(--text-primary); line-height: 1.4;
+  margin-bottom: 16px;
+}
+.cover-subtitle {
+  font-size: 17px; color: var(--text-secondary);
+  font-weight: 300; margin-bottom: 28px;
+}
+.cover-meta {
+  font-size: 13px; color: var(--text-tertiary);
+}
+.cover-divider {
+  width: 40px; height: 3px; margin: 32px auto 0;
+  background: var(--accent); border-radius: 2px;
+}
+
+/* ===== TOC Card ===== */
+.toc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px; margin: 20px 0 40px;
+  box-shadow: var(--shadow-sm);
+}
+.toc-card-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.toc-card-title::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 18px; background: var(--accent);
+  border-radius: 2px;
+}
+.toc-list { list-style: none; }
+.toc-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.toc-item:last-child { border-bottom: none; }
+.toc-num {
+  min-width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  background: var(--accent-light); border-radius: 6px;
+}
+.toc-link {
+  font-size: 15px; color: var(--text-secondary);
+  text-decoration: none; cursor: pointer;
+  transition: color 0.2s;
+}
+.toc-link:hover { color: var(--accent); }
+
+/* ===== Chapter ===== */
+.chapter {
+  scroll-margin-top: 20px;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.chapter.visible { opacity: 1; transform: translateY(0); }
+
+.chapter-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 28px; padding-top: 10px;
+}
+.chapter-num {
+  min-width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 700; color: white;
+  background: var(--accent); border-radius: 50%;
+}
+.chapter-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px; font-weight: 700;
+  color: var(--text-primary); line-height: 1.3;
+}
+
+/* ===== Sub-heading ===== */
+.sub-heading {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 19px; font-weight: 600;
+  color: var(--text-primary);
+  margin: 32px 0 14px;
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+}
+
+/* ===== Divider Accent ===== */
+.divider-accent {
+  height: 1px; margin: 48px 40px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+/* ===== Paragraph ===== */
+.para {
+  font-size: 15.5px; line-height: 1.85;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.para strong { color: var(--text-primary); font-weight: 500; }
+
+/* ===== Compare Table ===== */
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  margin: 24px 0; font-size: 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+.compare-table thead th {
+  padding: 14px 16px; text-align: left;
+  background: var(--accent-light);
+  color: var(--text-primary); font-weight: 600;
+  font-size: 13px;
+}
+.compare-table tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.compare-table tbody tr:hover { background: rgba(192,121,60,0.04); }
+.compare-table .good { color: #5a8f3c; }
+.compare-table .bad { color: #c05c3c; }
+
+/* ===== Highlight Card ===== */
+.highlight-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px; margin: 24px 0;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid #e8a85c;
+}
+.highlight-card-title {
+  font-size: 16px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.highlight-card-title::before { content: '💡'; }
+.highlight-card p {
+  font-size: 14.5px; color: var(--text-secondary);
+  line-height: 1.85; margin-bottom: 8px;
+}
+.highlight-card p:last-child { margin-bottom: 0; }
+
+/* ===== Step List ===== */
+.step-list { list-style: none; margin: 20px 0; padding: 0; }
+.step-item {
+  display: flex; gap: 14px; margin-bottom: 16px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.step-num {
+  min-width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  color: white; background: var(--accent);
+  border-radius: 50%; flex-shrink: 0;
+}
+.step-content { flex: 1; }
+.step-content strong { color: var(--text-primary); display: block; margin-bottom: 4px; }
+.step-content span { font-size: 14px; color: var(--text-secondary); }
+
+/* ===== Quote Block ===== */
+.quote-block {
+  margin: 24px 0; padding: 16px 20px 16px 24px;
+  border-left: 3px solid var(--accent);
+  background: var(--highlight);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 15px; color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ===== Deep Dive Card ===== */
+.deep-dive-card {
+  background: linear-gradient(135deg, #fff8f0, #fffcf8);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: 24px 28px; margin: 24px 0;
+  box-shadow: var(--shadow-md);
+}
+.deep-dive-label {
+  font-size: 13px; font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+.deep-dive-label::before { content: '\1F50D'; }
+.deep-dive-card p {
+  font-size: 14.5px; color: var(--text-secondary);
+  line-height: 1.85; margin-bottom: 10px;
+}
+.deep-dive-card p:last-child { margin-bottom: 0; }
+.deep-dive-card strong { color: var(--text-primary); }
+
+/* ===== Diagram Container ===== */
+.diagram-container {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px; margin: 24px 0;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.diagram-caption {
+  text-align: center;
+  font-size: 13px; color: var(--text-tertiary);
+  margin-top: 12px; font-style: italic;
+}
+
+/* ===== Conclusion Block ===== */
+.conclusion-block {
+  text-align: center; margin: 40px 0 20px;
+  padding: 40px 30px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.conclusion-icon { font-size: 48px; margin-bottom: 16px; }
+.conclusion-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 20px;
+}
+.conclusion-text {
+  font-size: 15px; color: var(--text-secondary);
+  line-height: 2; max-width: 600px; margin: 0 auto;
+  text-align: left;
+}
+
+/* ===== Appendix Card ===== */
+.appendix-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 28px; margin: 24px 0;
+  box-shadow: var(--shadow-sm);
+}
+.appendix-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.appendix-title::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 18px; background: var(--accent);
+  border-radius: 2px;
+}
+.appendix-item {
+  display: flex; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.appendix-item:last-child { border-bottom: none; }
+.appendix-item-num {
+  min-width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  color: var(--accent); background: var(--accent-light);
+  border-radius: 50%; flex-shrink: 0;
+}
+.appendix-item-content { flex: 1; }
+.appendix-item-title {
+  font-size: 14.5px; font-weight: 500;
+  color: var(--text-primary); margin-bottom: 4px;
+}
+.appendix-item-desc {
+  font-size: 13px; color: var(--text-tertiary);
+}
+
+/* ===== Habit Card (Ch2) ===== */
+.habit-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px; margin: 20px 0;
+  box-shadow: var(--shadow-sm);
+}
+.habit-card-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.habit-card-icon {
+  min-width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; background: var(--accent-light);
+  border-radius: 8px;
+}
+.habit-card-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 17px; font-weight: 600; color: var(--text-primary);
+}
+.habit-card p {
+  font-size: 14.5px; color: var(--text-secondary);
+  line-height: 1.85; margin-bottom: 6px;
+}
+.habit-card p:last-child { margin-bottom: 0; }
+
+/* ===== Training Card (Ch3) ===== */
+.training-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px; margin: 20px 0;
+  box-shadow: var(--shadow-sm);
+  border-top: 3px solid var(--accent);
+}
+.training-card-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 14px;
+}
+.training-detail { margin-bottom: 10px; }
+.training-detail-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--accent); margin-bottom: 4px;
+}
+.training-detail-text {
+  font-size: 14.5px; color: var(--text-secondary);
+  line-height: 1.85;
+}
+
+/* ===== Footer ===== */
+.page-footer {
+  text-align: center; padding: 40px 20px 60px;
+  font-size: 13px; color: var(--text-tertiary);
+}
+.page-footer-divider {
+  width: 40px; height: 2px; margin: 0 auto 20px;
+  background: var(--border); border-radius: 1px;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+  .cover-section { padding: 60px 10px 40px; }
+  .cover-title { font-size: 26px; }
+  .cover-subtitle { font-size: 15px; }
+  .page-wrapper { padding: 0 16px; }
+  .chapter-title { font-size: 20px; }
+  .chapter-header { gap: 12px; }
+  .chapter-num { min-width: 38px; height: 38px; font-size: 16px; }
+  .toc-card { padding: 20px; }
+  .deep-dive-card { padding: 18px 20px; }
+  .diagram-container { padding: 16px; }
+  .compare-table { font-size: 13px; }
+  .compare-table thead th,
+  .compare-table tbody td { padding: 10px 10px; }
+  .sidebar { width: 260px; left: -280px; }
+  .divider-accent { margin: 36px 20px; }
+  .conclusion-block { padding: 30px 20px; }
+  .conclusion-title { font-size: 19px; }
+  .conclusion-text { font-size: 14px; }
+  .sub-heading { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Progress Bar ===== -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ===== Sidebar Overlay ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===== Sidebar Toggle ===== -->
+<div class="sidebar-toggle" id="sidebarToggle" title="打开目录">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4.5h12M3 9h12M3 13.5h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+</div>
+
+<!-- ===== Sidebar ===== -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">目录导航</div>
+    <div class="sidebar-close" id="sidebarClose">&#10005;</div>
+  </div>
+  <div class="sidebar-body">
+
+    <div class="sidebar-chapter-group" data-chapter="ch1">
+      <div class="sidebar-chapter-link" data-target="ch1">
+        <span class="sidebar-chapter-num">01</span>
+        <span>什么是散光？——基础知识入门</span>
+        <span class="sidebar-expand-icon">&#9654;</span>
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-href="#ch1-s1">散光的定义与症状</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch1-s2">角膜与屈光系统</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-chapter-group" data-chapter="ch2">
+      <div class="sidebar-chapter-link" data-target="ch2">
+        <span class="sidebar-chapter-num">02</span>
+        <span>散光的5个坏习惯</span>
+        <span class="sidebar-expand-icon">&#9654;</span>
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-href="#ch2-s1">习惯一：眯眼看东西</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch2-s2">习惯二：连续近距离用眼不休息</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch2-s3">习惯三：光线对比度过大</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch2-s4">习惯四：揉眼睛</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch2-s5">习惯五：超时长佩戴隐形眼镜</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-chapter-group" data-chapter="ch3">
+      <div class="sidebar-chapter-link" data-target="ch3">
+        <span class="sidebar-chapter-num">03</span>
+        <span>3个视力训练方法</span>
+        <span class="sidebar-expand-icon">&#9654;</span>
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-href="#ch3-s1">方法一：远近交替聚焦训练</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch3-s2">方法二：眼球转动训练</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch3-s3">方法三：眼部热敷按摩</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-chapter-group" data-chapter="ch4">
+      <div class="sidebar-chapter-link" data-target="ch4">
+        <span class="sidebar-chapter-num">04</span>
+        <span>科学护眼的日常建议</span>
+        <span class="sidebar-expand-icon">&#9654;</span>
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-href="#ch4-s1">20-20-20法则</a></li>
+        <li><a class="sidebar-sub-link" data-href="#ch4-s2">日常护眼清单</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-chapter-group" data-chapter="ch5">
+      <div class="sidebar-chapter-link" data-target="ch5">
+        <span class="sidebar-chapter-num">05</span>
+        <span>总结</span>
+        <span class="sidebar-expand-icon">&#9654;</span>
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-href="#ch5">全文总结</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-chapter-group" data-chapter="appendix">
+      <div class="sidebar-chapter-link" data-target="appendix">
+        <span class="sidebar-chapter-num">附</span>
+        <span>延伸阅读</span>
+      </div>
+    </div>
+
+  </div>
+  <div class="sidebar-progress">
+    <div class="sidebar-progress-label">
+      <span>阅读进度</span>
+      <span id="sidebarProgressPct">0%</span>
+    </div>
+    <div class="sidebar-progress-bar">
+      <div class="sidebar-progress-fill" id="sidebarProgressFill"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== Main Content ===== -->
+<div class="page-wrapper">
+<main class="content">
+
+<!-- ===== Cover ===== -->
+<div class="cover-section">
+  <div class="cover-badge">健康科普</div>
+  <h1 class="cover-title">散光怎么办？研究发现散光大多源于这5个习惯</h1>
+  <p class="cover-subtitle">附3个练习方法，让你获得更好视力</p>
+  <p class="cover-meta">来源：PROEM视力训练睛睛（视频号）&nbsp;&nbsp;|&nbsp;&nbsp;2026年6月10日</p>
+  <div class="cover-divider"></div>
+</div>
+
+<!-- ===== TOC Card ===== -->
+<div class="toc-card">
+  <div class="toc-card-title">本文目录</div>
+  <ul class="toc-list">
+    <li class="toc-item"><span class="toc-num">01</span><a class="toc-link" data-href="#ch1">什么是散光？——基础知识入门</a></li>
+    <li class="toc-item"><span class="toc-num">02</span><a class="toc-link" data-href="#ch2">散光的5个坏习惯</a></li>
+    <li class="toc-item"><span class="toc-num">03</span><a class="toc-link" data-href="#ch3">3个视力训练方法</a></li>
+    <li class="toc-item"><span class="toc-num">04</span><a class="toc-link" data-href="#ch4">科学护眼的日常建议</a></li>
+    <li class="toc-item"><span class="toc-num">05</span><a class="toc-link" data-href="#ch5">总结</a></li>
+    <li class="toc-item"><span class="toc-num">附</span><a class="toc-link" data-href="#appendix">延伸阅读</a></li>
+  </ul>
+</div>
+
+<!-- ===== Chapter 1 ===== -->
+<section class="chapter" id="ch1">
+  <div class="chapter-header">
+    <span class="chapter-num">01</span>
+    <h2 class="chapter-title">什么是散光？——基础知识入门</h2>
+  </div>
+
+  <h3 class="sub-heading" id="ch1-s1">散光的定义与症状</h3>
+  <p class="para">散光（Astigmatism）是一种常见的屈光不正，指眼睛的角膜或晶状体表面曲率不规则，导致光线无法在视网膜上形成清晰焦点，从而引起视力模糊或视物变形。</p>
+  <p class="para">散光与近视、远视一样，属于屈光不正的一种。它在人群中的发生率非常高，据统计，大多数人都有不同程度的散光。</p>
+  <p class="para"><strong>常见症状：</strong>视力模糊、重影、视疲劳、头痛、夜间眩光。很多人长期忍受这些症状却不知道自己患有散光。</p>
+
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">散光（Astigmatism）详解</div>
+    <p><strong>定义：</strong>角膜或晶状体表面曲率不规则，导致光线无法聚焦在视网膜上形成清晰像点。</p>
+    <p><strong>直觉：</strong>想象一个完美篮球 vs 一个橄榄球。正常角膜像篮球，各方向曲率相同；散光角膜像橄榄球，某个方向更弯，另一个方向更平。</p>
+    <p><strong>原理：</strong>正常眼球各子午线屈光力相同，光线聚焦为一个点。散光眼球不同子午线屈光力不同，光线形成前后两条焦线（Sturm's conoid / 斯特姆锥）。</p>
+    <p><strong>对比：</strong>规则散光——角膜最大和最小曲率方向互相垂直，可用柱镜矫正；不规则散光——角膜表面不规则，需硬性角膜接触镜。</p>
+    <p><strong>代价：</strong>散光无法通过训练完全恢复，但可通过训练缓解视疲劳、改善视觉质量。</p>
+  </div>
+
+  <!-- SVG: Normal vs Astigmatism Eye -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#9e9182"/>
+        </marker>
+        <marker id="arrowAccent" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#c0793c"/>
+        </marker>
+      </defs>
+
+      <!-- Left: Normal Eye -->
+      <text x="195" y="28" text-anchor="middle" fill="#2c2418" font-size="15" font-weight="600" font-family="Noto Sans SC, sans-serif">正常眼球</text>
+
+      <!-- Eyeball outline -->
+      <ellipse cx="195" cy="180" rx="120" ry="100" fill="none" stroke="#e4ddd3" stroke-width="2"/>
+      <ellipse cx="195" cy="180" rx="120" ry="100" fill="rgba(255,252,248,0.5)"/>
+
+      <!-- Cornea (regular arc) -->
+      <path d="M 310 120 Q 340 180 310 240" fill="none" stroke="#c0793c" stroke-width="3"/>
+      <text x="348" y="178" fill="#c0793c" font-size="12" font-family="Noto Sans SC, sans-serif">角膜（圆弧均匀）</text>
+
+      <!-- Lens -->
+      <ellipse cx="240" cy="180" rx="14" ry="30" fill="rgba(192,121,60,0.15)" stroke="#c0793c" stroke-width="1.5"/>
+
+      <!-- Retina -->
+      <path d="M 80 110 Q 60 180 80 250" fill="none" stroke="#9e9182" stroke-width="2"/>
+      <text x="38" y="180" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif">视网膜</text>
+
+      <!-- Light rays (parallel in) converging to ONE point -->
+      <line x1="420" y1="140" x2="310" y2="160" stroke="#c0793c" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="420" y1="180" x2="310" y2="180" stroke="#c0793c" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="420" y1="220" x2="310" y2="200" stroke="#c0793c" stroke-width="1.2" stroke-dasharray="4,3"/>
+
+      <!-- Internal rays converge to one focus -->
+      <line x1="310" y1="160" x2="85" y2="180" stroke="#c0793c" stroke-width="1" opacity="0.6"/>
+      <line x1="310" y1="180" x2="85" y2="180" stroke="#c0793c" stroke-width="1" opacity="0.6"/>
+      <line x1="310" y1="200" x2="85" y2="180" stroke="#c0793c" stroke-width="1" opacity="0.6"/>
+
+      <!-- Focus point -->
+      <circle cx="85" cy="180" r="5" fill="#c0793c"/>
+      <text x="85" y="210" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">焦点</text>
+
+      <!-- Divider -->
+      <line x1="390" y1="50" x2="390" y2="310" stroke="#ede7de" stroke-width="1" stroke-dasharray="6,4"/>
+
+      <!-- Right: Astigmatism Eye -->
+      <text x="585" y="28" text-anchor="middle" fill="#2c2418" font-size="15" font-weight="600" font-family="Noto Sans SC, sans-serif">散光眼球</text>
+
+      <!-- Eyeball outline -->
+      <ellipse cx="585" cy="180" rx="120" ry="100" fill="none" stroke="#e4ddd3" stroke-width="2"/>
+      <ellipse cx="585" cy="180" rx="120" ry="100" fill="rgba(255,252,248,0.5)"/>
+
+      <!-- Cornea (irregular / oval shape) -->
+      <path d="M 695 100 Q 730 180 695 260" fill="none" stroke="#c05c3c" stroke-width="3"/>
+      <text x="738" y="170" fill="#c05c3c" font-size="12" font-family="Noto Sans SC, sans-serif">角膜（橄榄球形）</text>
+
+      <!-- Lens -->
+      <ellipse cx="630" cy="180" rx="14" ry="30" fill="rgba(192,92,60,0.15)" stroke="#c05c3c" stroke-width="1.5"/>
+
+      <!-- Retina -->
+      <path d="M 470 110 Q 450 180 470 250" fill="none" stroke="#9e9182" stroke-width="2"/>
+
+      <!-- Light rays in -->
+      <line x1="780" y1="140" x2="695" y2="155" stroke="#c05c3c" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="780" y1="180" x2="695" y2="180" stroke="#c05c3c" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="780" y1="220" x2="695" y2="205" stroke="#c05c3c" stroke-width="1.2" stroke-dasharray="4,3"/>
+
+      <!-- Internal rays forming TWO focal lines -->
+      <line x1="695" y1="155" x2="475" y2="165" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+      <line x1="695" y1="155" x2="475" y2="195" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+      <line x1="695" y1="180" x2="475" y2="165" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+      <line x1="695" y1="180" x2="475" y2="195" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+      <line x1="695" y1="205" x2="475" y2="165" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+      <line x1="695" y1="205" x2="475" y2="195" stroke="#c05c3c" stroke-width="1" opacity="0.5"/>
+
+      <!-- Focal line 1 (front) -->
+      <line x1="475" y1="155" x2="475" y2="175" stroke="#c05c3c" stroke-width="3"/>
+      <text x="475" y="148" text-anchor="middle" fill="#c05c3c" font-size="12" font-weight="600" font-family="Noto Sans SC, sans-serif">前焦线</text>
+
+      <!-- Focal line 2 (back) -->
+      <line x1="475" y1="185" x2="475" y2="205" stroke="#c05c3c" stroke-width="3"/>
+      <text x="475" y="222" text-anchor="middle" fill="#c05c3c" font-size="12" font-weight="600" font-family="Noto Sans SC, sans-serif">后焦线</text>
+
+      <!-- Sturm's conoid label -->
+      <text x="540" y="320" text-anchor="middle" fill="#9e9182" font-size="12" font-family="Noto Sans SC, sans-serif">斯特姆锥（Sturm's Conoid）：光线无法汇聚为单一焦点</text>
+    </svg>
+    <div class="diagram-caption">图1：正常眼球（左）平行光线汇聚为一个焦点 vs 散光眼球（右）平行光线形成前后两条焦线</div>
+  </div>
+
+  <h3 class="sub-heading" id="ch1-s2">角膜与屈光系统</h3>
+  <p class="para">角膜是眼球最外层的透明组织，承担眼球约 2/3 的屈光力（约 43D），是眼球最重要的屈光介质。它就像相机的镜头，而晶状体是可调焦的附加镜头，视网膜则是感光底片。</p>
+  <p class="para">光线依次经过角膜（43D）、房水、晶状体（19D）、玻璃体，最终聚焦于视网膜。眼球总屈光力约 58-60D。角膜没有血管，靠泪液和空气获取氧气，因此任何改变角膜形态的行为（如揉眼、压迫）都可能影响散光。</p>
+
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">角膜与屈光系统</div>
+    <p><strong>定义：</strong>角膜是眼球最外层的透明组织，承担眼球约 2/3 的屈光力（约 43D），是眼球最重要的屈光介质。</p>
+    <p><strong>直觉：</strong>角膜就像相机的镜头，晶状体是可调焦的附加镜头，视网膜是感光底片。</p>
+    <p><strong>原理：</strong>光线依次经过角膜（43D）→ 房水 → 晶状体（19D）→ 玻璃体 → 聚焦于视网膜。总屈光力约 58-60D。</p>
+    <p><strong>对比：</strong>角膜屈光力固定，晶状体可通过睫状肌调节；角膜厚度仅约 0.5mm，非常脆弱。</p>
+    <p><strong>代价：</strong>角膜没有血管，靠泪液和空气获取氧气。任何改变角膜形态的行为（揉眼、压迫）都可能影响散光。</p>
+  </div>
+</section>
+
+<div class="divider-accent"></div>
+
+<!-- ===== Chapter 2 ===== -->
+<section class="chapter" id="ch2">
+  <div class="chapter-header">
+    <span class="chapter-num">02</span>
+    <h2 class="chapter-title">散光的5个坏习惯</h2>
+  </div>
+
+  <p class="para">浙江大学视觉健康研究指出，手机屏幕只是"背锅侠"，真正导致散光加深的，是日常生活中长期积累的5个伤眼习惯。以下逐一分析每个习惯的作用机制。</p>
+
+  <h3 class="sub-heading" id="ch2-s1">习惯一：眯眼看东西</h3>
+  <div class="habit-card">
+    <div class="habit-card-header">
+      <span class="habit-card-icon">&#128064;</span>
+      <span class="habit-card-title">眯眼看东西</span>
+    </div>
+    <p>浙大研究指出，眯眼是"给眼球上刑"。眼睑收缩对角膜产生持续压力，房水排出受阻，眼压升高。长期眯眼的群体角膜散光发生率显著高于普通人群。</p>
+    <p>眯眼利用"针孔效应"暂时提高锐度，但代价是角膜形态的不可逆改变。</p>
+  </div>
+
+  <h3 class="sub-heading" id="ch2-s2">习惯二：连续近距离用眼不休息</h3>
+  <div class="habit-card">
+    <div class="habit-card-header">
+      <span class="habit-card-icon">&#128187;</span>
+      <span class="habit-card-title">连续近距离用眼不休息</span>
+    </div>
+    <p>连续看近 40 分钟后，睫状肌开始进入痉挛预备期。超过 60 分钟，调节滞后出现——抬头看远处要好一会儿才能对焦。这不是衰老，而是功能疲劳性损伤。</p>
+  </div>
+
+  <h3 class="sub-heading" id="ch2-s3">习惯三：光线对比度过大的环境下用眼</h3>
+  <div class="habit-card">
+    <div class="habit-card-header">
+      <span class="habit-card-icon">&#127769;</span>
+      <span class="habit-card-title">光线对比度过大的环境下用眼</span>
+    </div>
+    <p>最典型的自毁操作：夜里关灯玩手机。强光下瞳孔缩成针尖，暗光下瞳孔放大，视觉系统代谢负担加重。长期如此，夜间视力下降、眩光感增强。</p>
+  </div>
+
+  <h3 class="sub-heading" id="ch2-s4">习惯四：揉眼睛</h3>
+  <div class="habit-card">
+    <div class="habit-card-header">
+      <span class="habit-card-icon">&#129504;</span>
+      <span class="habit-card-title">揉眼睛</span>
+    </div>
+    <p>每次用力揉眼，角膜都经历短暂变形。频繁揉眼是圆锥角膜最重要的行为相关危险因素。圆锥角膜早期几乎没感觉，等发现配眼镜都看不清时，角膜已经发生结构性改变。</p>
+  </div>
+
+  <h3 class="sub-heading" id="ch2-s5">习惯五：超时长佩戴隐形眼镜</h3>
+  <div class="habit-card">
+    <div class="habit-card-header">
+      <span class="habit-card-icon">&#129717;</span>
+      <span class="habit-card-title">超时长佩戴隐形眼镜</span>
+    </div>
+    <p>角膜没有血管，氧气全靠泪液和空气交换。隐形眼镜本质是物理屏障。连续多日、每天超过 10 小时佩戴，角膜长期亚缺氧。</p>
+    <p>后果：角膜缘新生血管 → 角膜上皮屏障下降 → 干眼、异物感 → 最极端：角膜溃疡。</p>
+  </div>
+
+  <!-- SVG: 5 habits impact diagram -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#c05c3c"/>
+        </marker>
+      </defs>
+
+      <!-- Center: Cornea cross-section -->
+      <ellipse cx="390" cy="260" rx="80" ry="55" fill="rgba(192,121,60,0.1)" stroke="#c0793c" stroke-width="2"/>
+      <text x="390" y="255" text-anchor="middle" fill="#2c2418" font-size="14" font-weight="600" font-family="Noto Sans SC, sans-serif">角膜</text>
+      <text x="390" y="275" text-anchor="middle" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif">（横截面）</text>
+      <!-- Deformation area -->
+      <ellipse cx="390" cy="260" rx="40" ry="28" fill="rgba(192,92,60,0.15)" stroke="none"/>
+
+      <!-- Habit 1: top-left -->
+      <rect x="20" y="40" width="160" height="60" rx="8" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <text x="100" y="66" text-anchor="middle" fill="#c05c3c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">眯眼看东西</text>
+      <text x="100" y="86" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">眼睑压迫角膜</text>
+      <line x1="180" y1="85" x2="330" y2="220" stroke="#c05c3c" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+      <!-- Habit 2: top -->
+      <rect x="310" y="20" width="160" height="60" rx="8" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <text x="390" y="46" text-anchor="middle" fill="#c05c3c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">连续近距离用眼</text>
+      <text x="390" y="66" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">睫状肌痉挛</text>
+      <line x1="390" y1="80" x2="390" y2="205" stroke="#c05c3c" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+      <!-- Habit 3: top-right -->
+      <rect x="600" y="40" width="160" height="60" rx="8" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <text x="680" y="66" text-anchor="middle" fill="#c05c3c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">光线对比过大</text>
+      <text x="680" y="86" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">瞳孔频繁缩放</text>
+      <line x1="600" y1="85" x2="450" y2="220" stroke="#c05c3c" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+      <!-- Habit 4: bottom-left -->
+      <rect x="20" y="380" width="160" height="60" rx="8" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <text x="100" y="406" text-anchor="middle" fill="#c05c3c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">揉眼睛</text>
+      <text x="100" y="426" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">角膜直接变形</text>
+      <line x1="180" y1="395" x2="330" y2="300" stroke="#c05c3c" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+      <!-- Habit 5: bottom-right -->
+      <rect x="600" y="380" width="160" height="60" rx="8" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <text x="680" y="406" text-anchor="middle" fill="#c05c3c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">超时戴隐形眼镜</text>
+      <text x="680" y="426" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">角膜缺氧变形</text>
+      <line x1="600" y1="395" x2="450" y2="300" stroke="#c05c3c" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+      <!-- Center result label -->
+      <text x="390" y="460" text-anchor="middle" fill="#2c2418" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">5个习惯的共同终点：角膜形态不可逆改变 → 散光加重</text>
+    </svg>
+    <div class="diagram-caption">图2：5个坏习惯从不同路径影响角膜，最终导致散光加重</div>
+  </div>
+
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">圆锥角膜（Keratoconus）</div>
+    <p><strong>定义：</strong>角膜中央进行性变薄、前凸，形成不规则散光的疾病。</p>
+    <p><strong>直觉：</strong>就像一个气球被反复按压同一个位置，那个位置就会越来越薄、越来越凸。</p>
+    <p><strong>原理：</strong>角膜基质层胶原纤维退化 → 角膜变薄 → 眼内压推挤 → 中央前凸 → 不规则散光。典型发病年龄 15-25 岁。</p>
+    <p><strong>对比：</strong>普通散光是角膜曲率均匀不对称（规则），圆锥角膜是角膜局部变薄突出（不规则），普通眼镜无法矫正。</p>
+    <p><strong>代价：</strong>早期可通过 RGP（硬性角膜接触镜）矫正，晚期需角膜交联手术或角膜移植。预防关键是避免频繁揉眼。</p>
+  </div>
+
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">睫状肌与调节功能</div>
+    <p><strong>定义：</strong>睫状肌是眼内控制晶状体曲率的平滑肌，负责眼睛的"自动对焦"功能。</p>
+    <p><strong>直觉：</strong>就像相机的自动对焦马达，看远时肌肉放松（晶状体变薄），看近时肌肉收缩（晶状体变厚）。</p>
+    <p><strong>原理：</strong>看近时睫状肌收缩 → 悬韧带松弛 → 晶状体弹性回缩变凸 → 屈光力增加。看远时反向过程。</p>
+    <p><strong>对比：</strong>年轻人调节力强（可达 10-15D），40 岁后调节力下降（老花眼）。长时间看近不休息会导致睫状肌痉挛（假性近视）。</p>
+    <p><strong>代价：</strong>睫状肌痉挛是可逆的，但长期不处理可发展为真性近视。每 30 分钟看远 20 秒是最简单有效的预防。</p>
+  </div>
+</section>
+
+<div class="divider-accent"></div>
+
+<!-- ===== Chapter 3 ===== -->
+<section class="chapter" id="ch3">
+  <div class="chapter-header">
+    <span class="chapter-num">03</span>
+    <h2 class="chapter-title">3个视力训练方法</h2>
+  </div>
+
+  <p class="para">以下 3 个训练方法简单易行，不需要特殊设备。它们不能治愈散光，但可以有效缓解视疲劳、改善视觉质量，配合良好用眼习惯长期坚持效果更佳。</p>
+
+  <h3 class="sub-heading" id="ch3-s1">方法一：远近交替聚焦训练</h3>
+  <div class="training-card">
+    <div class="training-card-title">远近交替聚焦训练</div>
+    <div class="training-detail">
+      <div class="training-detail-label">操作方法</div>
+      <div class="training-detail-text">食指竖立于眼前 30 厘米处，注视指尖 5 秒，再快速切换至 5 米外目标。交替 5 分钟，每天 3-5 次。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">原理</div>
+      <div class="training-detail-text">训练晶状体屈光度调节，改善调节灵敏度，增强睫状肌协调性。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">注意事项</div>
+      <div class="training-detail-text">选择窗外远景作为远距目标，保持正常眨眼频率。</div>
+    </div>
+  </div>
+
+  <h3 class="sub-heading" id="ch3-s2">方法二：眼球转动训练</h3>
+  <div class="training-card">
+    <div class="training-card-title">眼球转动训练</div>
+    <div class="training-detail">
+      <div class="training-detail-label">操作方法</div>
+      <div class="training-detail-text">顺时针和逆时针缓慢转动眼球各 10 圈，每天 3-5 次。配合上下左右四个方向各转动 5 次。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">原理</div>
+      <div class="training-detail-text">增强眼外肌协调性，缓解长时间固定焦距导致的睫状肌痉挛。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">注意事项</div>
+      <div class="training-detail-text">保持头部固定，动作轻柔避免眩晕，配合深呼吸效果更佳。</div>
+    </div>
+  </div>
+
+  <h3 class="sub-heading" id="ch3-s3">方法三：眼部热敷按摩</h3>
+  <div class="training-card">
+    <div class="training-card-title">眼部热敷按摩</div>
+    <div class="training-detail">
+      <div class="training-detail-label">操作方法</div>
+      <div class="training-detail-text">用 40 度左右热毛巾敷眼 2 分钟，然后用指腹轻按睛明穴、攒竹穴各 1 分钟。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">原理</div>
+      <div class="training-detail-text">促进睑板腺油脂分泌，缓解眼周肌肉紧张，改善泪膜质量。</div>
+    </div>
+    <div class="training-detail">
+      <div class="training-detail-label">注意事项</div>
+      <div class="training-detail-text">操作前清洁双手，角膜炎症期禁用。双手搓热后覆于闭合眼睑上也是一种简便方法。</div>
+    </div>
+  </div>
+
+  <!-- SVG: 3 Training Methods -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowAc2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#c0793c"/>
+        </marker>
+        <marker id="arrowAc2r" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M8,0 L0,3 L8,6" fill="#c0793c"/>
+        </marker>
+      </defs>
+
+      <!-- Section 1: Near-Far Focus -->
+      <rect x="10" y="10" width="240" height="390" rx="10" fill="rgba(192,121,60,0.05)" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="130" y="42" text-anchor="middle" fill="#c0793c" font-size="14" font-weight="600" font-family="Noto Sans SC, sans-serif">远近交替聚焦</text>
+
+      <!-- Eye -->
+      <ellipse cx="130" cy="200" rx="30" ry="20" fill="none" stroke="#2c2418" stroke-width="1.5"/>
+      <circle cx="130" cy="200" r="8" fill="#2c2418"/>
+      <text x="130" y="240" text-anchor="middle" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif">眼睛</text>
+
+      <!-- Finger (near) -->
+      <rect x="82" y="120" width="10" height="45" rx="5" fill="#c0793c" opacity="0.7"/>
+      <circle cx="87" cy="118" r="6" fill="#c0793c" opacity="0.7"/>
+      <text x="87" y="105" text-anchor="middle" fill="#6b5e4f" font-size="10" font-family="Noto Sans SC, sans-serif">手指 (30cm)</text>
+
+      <!-- Far target -->
+      <rect x="90" y="290" width="80" height="30" rx="6" fill="rgba(192,121,60,0.15)" stroke="#c0793c" stroke-width="1"/>
+      <text x="130" y="310" text-anchor="middle" fill="#c0793c" font-size="11" font-family="Noto Sans SC, sans-serif">远处目标 (5m)</text>
+
+      <!-- Arrows -->
+      <line x1="87" y1="178" x2="115" y2="195" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <line x1="130" y1="222" x2="130" y2="288" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <!-- Double arrow -->
+      <line x1="50" y1="170" x2="50" y2="280" stroke="#c0793c" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="50" y="165" text-anchor="middle" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">5秒</text>
+      <text x="50" y="296" text-anchor="middle" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">5秒</text>
+      <path d="M44,180 L50,170 L56,180" fill="none" stroke="#c0793c" stroke-width="1"/>
+      <path d="M44,270 L50,280 L56,270" fill="none" stroke="#c0793c" stroke-width="1"/>
+
+      <text x="130" y="390" text-anchor="middle" fill="#6b5e4f" font-size="11" font-family="Noto Sans SC, sans-serif">交替5分钟 / 每天3-5次</text>
+
+      <!-- Section 2: Eye Rotation -->
+      <rect x="270" y="10" width="240" height="390" rx="10" fill="rgba(192,121,60,0.05)" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="390" y="42" text-anchor="middle" fill="#c0793c" font-size="14" font-weight="600" font-family="Noto Sans SC, sans-serif">眼球转动训练</text>
+
+      <!-- Eye outline large -->
+      <circle cx="390" cy="210" r="70" fill="none" stroke="#e4ddd3" stroke-width="1" stroke-dasharray="6,4"/>
+      <!-- Eye -->
+      <ellipse cx="390" cy="210" rx="35" ry="24" fill="none" stroke="#2c2418" stroke-width="1.5"/>
+      <circle cx="390" cy="210" r="10" fill="#2c2418"/>
+
+      <!-- 8 direction arrows -->
+      <line x1="390" y1="175" x2="390" y2="148" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <line x1="390" y1="245" x2="390" y2="272" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <line x1="423" y1="210" x2="450" y2="210" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <line x1="357" y1="210" x2="330" y2="210" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowAc2)"/>
+      <!-- Diagonals -->
+      <line x1="414" y1="186" x2="434" y2="166" stroke="#c0793c" stroke-width="1.3" marker-end="url(#arrowAc2)"/>
+      <line x1="366" y1="186" x2="346" y2="166" stroke="#c0793c" stroke-width="1.3" marker-end="url(#arrowAc2)"/>
+      <line x1="414" y1="234" x2="434" y2="254" stroke="#c0793c" stroke-width="1.3" marker-end="url(#arrowAc2)"/>
+      <line x1="366" y1="234" x2="346" y2="254" stroke="#c0793c" stroke-width="1.3" marker-end="url(#arrowAc2)"/>
+
+      <!-- Rotation arrow (circular) -->
+      <path d="M 430 150 A 60 60 0 0 1 450 210" fill="none" stroke="#c0793c" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <path d="M 450 210 A 60 60 0 0 1 430 270" fill="none" stroke="#c0793c" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+      <!-- Direction labels -->
+      <text x="390" y="140" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">上</text>
+      <text x="390" y="290" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">下</text>
+      <text x="462" y="214" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">右</text>
+      <text x="318" y="214" text-anchor="end" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">左</text>
+
+      <text x="390" y="340" text-anchor="middle" fill="#6b5e4f" font-size="12" font-family="Noto Sans SC, sans-serif">顺/逆时针各10圈</text>
+      <text x="390" y="360" text-anchor="middle" fill="#6b5e4f" font-size="12" font-family="Noto Sans SC, sans-serif">上下左右各5次</text>
+      <text x="390" y="390" text-anchor="middle" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif">每天3-5次</text>
+
+      <!-- Section 3: Hot Compress Massage -->
+      <rect x="530" y="10" width="240" height="390" rx="10" fill="rgba(192,121,60,0.05)" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="650" y="42" text-anchor="middle" fill="#c0793c" font-size="14" font-weight="600" font-family="Noto Sans SC, sans-serif">眼部热敷按摩</text>
+
+      <!-- Face outline (simplified) -->
+      <ellipse cx="650" cy="210" rx="90" ry="110" fill="none" stroke="#e4ddd3" stroke-width="1.5"/>
+
+      <!-- Eyes on face -->
+      <ellipse cx="625" cy="190" rx="18" ry="12" fill="none" stroke="#2c2418" stroke-width="1.2"/>
+      <ellipse cx="675" cy="190" rx="18" ry="12" fill="none" stroke="#2c2418" stroke-width="1.2"/>
+
+      <!-- Acupoint: Jingming (inner corner of eyes) -->
+      <circle cx="607" cy="190" r="4" fill="#c0793c"/>
+      <text x="582" y="185" text-anchor="end" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">睛明穴</text>
+
+      <!-- Acupoint: Cuanzhu (above inner eyebrow) -->
+      <circle cx="620" cy="170" r="4" fill="#c0793c"/>
+      <text x="600" y="162" text-anchor="end" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">攒竹穴</text>
+
+      <!-- Acupoint: Taiyang (temple) -->
+      <circle cx="570" cy="195" r="4" fill="#c0793c"/>
+      <text x="548" y="200" text-anchor="end" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">太阳穴</text>
+
+      <!-- Acupoint: Sibai (below eye) -->
+      <circle cx="625" cy="215" r="4" fill="#c0793c"/>
+      <text x="600" y="232" text-anchor="end" fill="#c0793c" font-size="10" font-family="Noto Sans SC, sans-serif">四白穴</text>
+
+      <!-- Heat wave indicator -->
+      <path d="M 650 310 Q 640 320 650 330 Q 660 340 650 350" fill="none" stroke="#c0793c" stroke-width="1.5" opacity="0.5"/>
+      <path d="M 665 310 Q 655 320 665 330 Q 675 340 665 350" fill="none" stroke="#c0793c" stroke-width="1.5" opacity="0.5"/>
+      <text x="650" y="375" text-anchor="middle" fill="#6b5e4f" font-size="11" font-family="Noto Sans SC, sans-serif">40度热敷2分钟</text>
+      <text x="650" y="393" text-anchor="middle" fill="#9e9182" font-size="10" font-family="Noto Sans SC, sans-serif">按压穴位各1分钟</text>
+    </svg>
+    <div class="diagram-caption">图3：三种视力训练方法示意图——远近聚焦（左）、眼球转动（中）、穴位热敷按摩（右）</div>
+  </div>
+
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">睑板腺与泪膜</div>
+    <p><strong>定义：</strong>睑板腺是眼睑边缘的皮脂腺，分泌油脂构成泪膜的最外层，防止泪液蒸发。</p>
+    <p><strong>直觉：</strong>就像锅上盖盖子防止水分蒸发，睑板腺分泌的油脂就是泪膜的"盖子"。</p>
+    <p><strong>原理：</strong>泪膜分三层——底层粘蛋白（结膜杯状细胞分泌）→ 中层水液（泪腺分泌）→ 外层脂质（睑板腺分泌）。脂质层防止水液蒸发。</p>
+    <p><strong>对比：</strong>干眼症患者常伴有睑板腺功能障碍（MGD），油脂分泌不足导致泪膜破裂时间缩短。</p>
+    <p><strong>代价：</strong>热敷温度不宜过高（不超过 42 度），温度过高可能损伤角膜上皮。</p>
+  </div>
+</section>
+
+<div class="divider-accent"></div>
+
+<!-- ===== Chapter 4 ===== -->
+<section class="chapter" id="ch4">
+  <div class="chapter-header">
+    <span class="chapter-num">04</span>
+    <h2 class="chapter-title">科学护眼的日常建议</h2>
+  </div>
+
+  <h3 class="sub-heading" id="ch4-s1">20-20-20法则</h3>
+  <p class="para"><strong>20-20-20 法则</strong>：每用眼 20 分钟，看 20 英尺（约 6 米）以外，持续 20 秒。这是美国眼科协会推荐的最简单有效的护眼方法。</p>
+
+  <div class="quote-block">
+    每用眼 20 分钟，看 20 英尺（约 6 米）以外，持续 20 秒。——美国眼科协会推荐
+  </div>
+
+  <p class="para">除了 20-20-20 法则，以下日常护眼习惯同样重要：</p>
+  <p class="para"><strong>户外活动：</strong>每日保证 1 小时自然光环境远距离视物。自然光全光谱刺激视网膜多巴胺分泌，延缓眼轴增长。选择上午 10 点前或下午 4 点后的温和光照时段。</p>
+  <p class="para"><strong>用眼距离：</strong>保持 30 厘米以上阅读距离。</p>
+  <p class="para"><strong>饮食补充：</strong>维生素 A（胡萝卜、菠菜）、叶黄素（玉米、蛋黄）、Omega-3（深海鱼）。</p>
+  <p class="para"><strong>定期检查：</strong>每年至少一次眼科检查。</p>
+
+  <!-- Compare Table -->
+  <table class="compare-table">
+    <thead>
+      <tr><th>维度</th><th class="good">好习惯</th><th class="bad">坏习惯</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>用眼距离</td><td class="good">保持 30cm 以上</td><td class="bad">贴近屏幕不足 20cm</td></tr>
+      <tr><td>休息频率</td><td class="good">每 20 分钟远眺 20 秒</td><td class="bad">连续用眼超过 60 分钟</td></tr>
+      <tr><td>光线环境</td><td class="good">均匀充足的自然光</td><td class="bad">关灯玩手机</td></tr>
+      <tr><td>眼部接触</td><td class="good">不揉眼、不用力按压</td><td class="bad">频繁用力揉眼</td></tr>
+      <tr><td>隐形眼镜</td><td class="good">每天不超过 8 小时</td><td class="bad">连续佩戴超过 12 小时</td></tr>
+      <tr><td>户外活动</td><td class="good">每天 1 小时自然光</td><td class="bad">全天室内无户外</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-card">
+    <div class="highlight-card-title">睡眠护眼提示</div>
+    <p>保证 7-8 小时充足睡眠，入睡后关掉所有灯光。</p>
+    <p>2026 年《0~6 岁儿童眼保健及视力检查服务规范》指出：长期开小夜灯的宝宝，散光发生率是全黑环境宝宝的 2.3 倍。</p>
+  </div>
+
+  <h3 class="sub-heading" id="ch4-s2">日常护眼清单</h3>
+  <ul class="step-list">
+    <li class="step-item">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <strong>20-20-20 法则</strong>
+        <span>每 20 分钟远眺 20 秒，最简单有效的护眼方法</span>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <strong>户外活动</strong>
+        <span>每天 1 小时自然光环境，刺激视网膜多巴胺分泌</span>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <strong>正确姿势</strong>
+        <span>保持 30cm 以上阅读距离，避免躺着看手机</span>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <strong>不揉眼</strong>
+        <span>眼睛不适时用人工泪液替代揉眼</span>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">5</span>
+      <div class="step-content">
+        <strong>定期检查</strong>
+        <span>每年至少一次眼科检查，早发现早矫正</span>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<div class="divider-accent"></div>
+
+<!-- ===== Chapter 5: Summary ===== -->
+<section class="chapter" id="ch5">
+  <div class="chapter-header">
+    <span class="chapter-num">05</span>
+    <h2 class="chapter-title">总结</h2>
+  </div>
+
+  <p class="para">散光大多源于日常 5 个坏习惯：眯眼、连续近距离用眼、光线对比过大、揉眼、超时戴隐形眼镜。</p>
+  <p class="para">这 5 个习惯的共同特征：<strong>让眼睛失去自我修复的间隙</strong>。</p>
+  <p class="para">3 个简单训练方法可以有效缓解视疲劳：远近交替聚焦、眼球转动、热敷按摩。训练需要长期坚持，配合良好用眼习惯。</p>
+  <p class="para">严重散光应及时就医，配戴合适矫正镜或考虑屈光手术。</p>
+
+  <div class="conclusion-block">
+    <div class="conclusion-icon">&#128065;</div>
+    <div class="conclusion-title">护眼之道，贵在日常</div>
+    <div class="conclusion-text">
+      你的视力不会一夜之间变好，但它会感谢你从此刻开始的每一次克制。从今天起，在每个眯眼的瞬间，试着松开眉头；在每个准备揉眼的瞬间，停住动作，去滴一滴人工泪液；在每个连续工作的间隙，走到窗边，看五米外的那棵树。
+    </div>
+  </div>
+</section>
+
+<div class="divider-accent"></div>
+
+<!-- ===== Appendix ===== -->
+<section class="chapter" id="appendix">
+  <div class="chapter-header">
+    <span class="chapter-num">附</span>
+    <h2 class="chapter-title">延伸阅读</h2>
+  </div>
+
+  <div class="appendix-card">
+    <div class="appendix-title">参考资料</div>
+
+    <div class="appendix-item">
+      <span class="appendix-item-num">1</span>
+      <div class="appendix-item-content">
+        <div class="appendix-item-title">浙江大学视觉健康研究报告（2025）</div>
+        <div class="appendix-item-desc">手机屏幕只是背锅侠，真正的伤眼行为是日常惯性中的五个动作</div>
+      </div>
+    </div>
+
+    <div class="appendix-item">
+      <span class="appendix-item-num">2</span>
+      <div class="appendix-item-content">
+        <div class="appendix-item-title">《散光恢复训练10个动作》</div>
+        <div class="appendix-item-desc">山东省立医院眼科，复禾健康</div>
+      </div>
+    </div>
+
+    <div class="appendix-item">
+      <span class="appendix-item-num">3</span>
+      <div class="appendix-item-content">
+        <div class="appendix-item-title">《散光训练最佳方法》</div>
+        <div class="appendix-item-desc">山东省立医院眼科，博禾医生</div>
+      </div>
+    </div>
+
+    <div class="appendix-item">
+      <span class="appendix-item-num">4</span>
+      <div class="appendix-item-content">
+        <div class="appendix-item-title">2026年国家卫健委《0~6岁儿童眼保健及视力检查服务规范》</div>
+        <div class="appendix-item-desc">长期开小夜灯的宝宝，散光发生率是全黑环境宝宝的2.3倍</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="page-footer">
+  <div class="page-footer-divider"></div>
+  <p>本文为视频内容总结，仅供学习参考。如有眼部不适，请及时就医。</p>
+  <p style="margin-top:8px;">Generated on 2026-06-10</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function() {
+  // ===== Elements =====
+  const progressBar = document.getElementById('progressBar');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarClose = document.getElementById('sidebarClose');
+  const sidebarProgressFill = document.getElementById('sidebarProgressFill');
+  const sidebarProgressPct = document.getElementById('sidebarProgressPct');
+
+  const chapterIds = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'appendix'];
+  const chapterLinks = document.querySelectorAll('.sidebar-chapter-link');
+  const subLinks = document.querySelectorAll('.sidebar-sub-link');
+  const tocLinks = document.querySelectorAll('.toc-link');
+
+  // ===== Progress Bar =====
+  function updateProgress() {
+    var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    var scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    var progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    sidebarProgressFill.style.width = progress + '%';
+    sidebarProgressPct.textContent = Math.round(progress) + '%';
+  }
+
+  // ===== Sidebar Toggle =====
+  function toggleSidebar() {
+    var isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+    } else {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+    }
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+  sidebarClose.addEventListener('click', toggleSidebar);
+  sidebarOverlay.addEventListener('click', toggleSidebar);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) toggleSidebar();
+  });
+
+  // ===== Chapter Expand/Collapse =====
+  chapterLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      var group = this.closest('.sidebar-chapter-group');
+      var subList = group.querySelector('.sidebar-sub-list');
+
+      // Collapse all others
+      document.querySelectorAll('.sidebar-sub-list.expanded').forEach(function(ul) {
+        if (ul !== subList) ul.classList.remove('expanded');
+      });
+      document.querySelectorAll('.sidebar-chapter-link.active').forEach(function(l) {
+        if (l !== link) l.classList.remove('active');
+      });
+
+      // Toggle this one
+      link.classList.toggle('active');
+      if (subList) subList.classList.toggle('expanded');
+    });
+  });
+
+  // ===== Sub-link Navigation =====
+  subLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      var href = this.getAttribute('data-href');
+      if (href) {
+        var target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close sidebar on mobile
+          if (window.innerWidth <= 768) toggleSidebar();
+        }
+      }
+    });
+  });
+
+  // ===== TOC Link Navigation =====
+  tocLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      var href = this.getAttribute('data-href');
+      if (href) {
+        var target = document.querySelector(href);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // ===== Scroll Tracking =====
+  function updateActiveChapter() {
+    var scrollTop = window.scrollY + 120;
+    var currentChapter = chapterIds[0];
+
+    chapterIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollTop) currentChapter = id;
+    });
+
+    // Update sidebar highlighting
+    chapterLinks.forEach(function(link) {
+      var target = link.getAttribute('data-target');
+      var group = link.closest('.sidebar-chapter-group');
+      var subList = group.querySelector('.sidebar-sub-list');
+
+      if (target === currentChapter) {
+        if (!link.classList.contains('active')) {
+          // Deactivate all
+          document.querySelectorAll('.sidebar-chapter-link.active').forEach(function(l) {
+            l.classList.remove('active');
+          });
+          document.querySelectorAll('.sidebar-sub-list.expanded').forEach(function(ul) {
+            ul.classList.remove('expanded');
+          });
+          // Activate current
+          link.classList.add('active');
+          if (subList) subList.classList.add('expanded');
+        }
+      }
+    });
+  }
+
+  // ===== Chapter Entry Animation =====
+  var chapters = document.querySelectorAll('.chapter');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.08 });
+  chapters.forEach(function(ch) { observer.observe(ch); });
+
+  // ===== Scroll Event =====
+  window.addEventListener('scroll', function() {
+    updateProgress();
+    updateActiveChapter();
+  }, { passive: true });
+
+  // Initial call
+  updateProgress();
+  updateActiveChapter();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anthropic 如何使用 Claude 构建 AI 产品 — Mike Krieger 深度对话</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS Variables ========== */
+:root {
+  --bg-primary: #f6f1eb;
+  --bg-card: #fffcf8;
+  --bg-sidebar: #eee8df;
+  --text-primary: #2c2418;
+  --text-secondary: #6b5e4f;
+  --text-tertiary: #9e9182;
+  --accent: #c0793c;
+  --accent-light: rgba(192,121,60,0.12);
+  --accent-dark: #a8662e;
+  --border: #e4ddd3;
+  --border-light: #ede7de;
+  --tag-bg: #f0e8dc;
+  --highlight: #fff3e0;
+  --shadow-sm: 0 1px 3px rgba(44,36,24,0.06);
+  --shadow-md: 0 4px 12px rgba(44,36,24,0.08);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --transition: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-w: 280px;
+}
+
+/* ========== Reset & Base ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 15.5px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== Progress Bar ========== */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--accent), #e8a838);
+  z-index: 9999; transition: width 0.15s ease-out;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ========== Page Wrapper ========== */
+.page-wrapper {
+  max-width: 820px; margin: 0 auto; padding: 0 24px;
+}
+
+/* ========== Sidebar ========== */
+.sidebar {
+  position: fixed; top: 0; left: 0;
+  width: var(--sidebar-w); height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  z-index: 1000; transform: translateX(-100%);
+  transition: transform var(--transition);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-header {
+  padding: 20px 20px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+}
+.sidebar-close {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; cursor: pointer; font-size: 16px; color: var(--text-tertiary);
+  transition: all 0.2s;
+}
+.sidebar-close:hover { background: var(--border-light); color: var(--text-primary); }
+
+.sidebar-body {
+  flex: 1; overflow-y: auto; padding: 12px 0;
+}
+.sidebar-body::-webkit-scrollbar { width: 4px; }
+.sidebar-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.sidebar-chapter-group { margin-bottom: 4px; }
+.sidebar-chapter-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--text-secondary);
+  transition: all 0.2s; user-select: none;
+}
+.sidebar-chapter-link:hover { background: rgba(192,121,60,0.06); color: var(--text-primary); }
+.sidebar-chapter-link.active { color: var(--accent); font-weight: 600; }
+.sidebar-chapter-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--border-light); font-size: 11px; font-weight: 700;
+  color: var(--text-tertiary); flex-shrink: 0;
+}
+.sidebar-chapter-link.active .sidebar-chapter-num { background: var(--accent-light); color: var(--accent); }
+
+.sidebar-sub-list {
+  list-style: none; max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.sidebar-sub-list.expanded { max-height: 300px; }
+.sidebar-sub-link {
+  display: block; padding: 7px 20px 7px 54px;
+  font-size: 13px; color: var(--text-tertiary); cursor: pointer;
+  transition: all 0.2s; text-decoration: none;
+}
+.sidebar-sub-link:hover { color: var(--accent); }
+.sidebar-sub-link.active { color: var(--accent); font-weight: 500; }
+
+.sidebar-progress {
+  padding: 16px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.sidebar-progress-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;
+}
+.sidebar-progress-bar {
+  height: 4px; background: var(--border-light); border-radius: 4px; overflow: hidden;
+}
+.sidebar-progress-fill {
+  height: 100%; width: 0; background: var(--accent); border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+/* Sidebar Toggle */
+.sidebar-toggle {
+  position: fixed; left: 16px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg-card); border: 1px solid var(--border);
+  box-shadow: var(--shadow-md); cursor: pointer; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s; font-size: 18px; color: var(--text-secondary);
+}
+.sidebar-toggle:hover { box-shadow: 0 4px 16px rgba(44,36,24,0.12); color: var(--accent); }
+.sidebar-toggle.shifted { left: calc(var(--sidebar-w) + 8px); }
+
+.sidebar-overlay {
+  position: fixed; inset: 0; background: rgba(44,36,24,0.25);
+  z-index: 999; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.sidebar-overlay.show { opacity: 1; pointer-events: auto; }
+
+/* ========== Cover Section ========== */
+.cover-section {
+  text-align: center; padding: 80px 0 48px;
+}
+.cover-badge {
+  display: inline-block; padding: 5px 16px;
+  background: var(--accent-light); color: var(--accent);
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.5px; margin-bottom: 24px;
+}
+.cover-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 32px; font-weight: 700; color: var(--text-primary);
+  line-height: 1.4; margin-bottom: 16px;
+}
+.cover-subtitle {
+  font-size: 16px; color: var(--text-secondary); line-height: 1.7;
+  max-width: 600px; margin: 0 auto 24px;
+}
+.cover-meta {
+  font-size: 13px; color: var(--text-tertiary); display: flex;
+  justify-content: center; flex-wrap: wrap; gap: 6px 16px;
+}
+.cover-divider {
+  width: 40px; height: 3px; background: var(--accent);
+  border-radius: 2px; margin: 32px auto 0;
+}
+
+/* ========== TOC Card ========== */
+.toc-card {
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 28px 32px;
+  margin: 32px 0; box-shadow: var(--shadow-sm);
+}
+.toc-card-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 20px;
+}
+.toc-list { list-style: none; }
+.toc-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border-light);
+  cursor: pointer; transition: all 0.2s;
+}
+.toc-item:last-child { border-bottom: none; }
+.toc-item:hover { padding-left: 8px; }
+.toc-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.toc-item-text { font-size: 14.5px; color: var(--text-secondary); }
+.toc-item:hover .toc-item-text { color: var(--accent); }
+
+/* ========== Chapter ========== */
+.chapter {
+  scroll-margin-top: 20px;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  padding: 32px 0 16px;
+}
+.chapter.visible { opacity: 1; transform: translateY(0); }
+
+.chapter-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+}
+.chapter-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.chapter-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px; font-weight: 700; color: var(--text-primary);
+  line-height: 1.35;
+}
+
+/* ========== Subtitle ========== */
+.sub-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 600; color: var(--text-primary);
+  margin: 28px 0 14px; padding-left: 14px;
+  border-left: 3px solid var(--accent);
+}
+
+/* ========== Divider Accent ========== */
+.divider-accent {
+  height: 1px; border: none; margin: 40px 0;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--border), transparent);
+}
+
+/* ========== Paragraph ========== */
+.para {
+  font-size: 15.5px; line-height: 1.85; color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ========== Quote Block ========== */
+.quote-block {
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px; margin: 20px 0;
+  background: var(--accent-light);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic; color: var(--text-secondary);
+  font-size: 14.5px; line-height: 1.85;
+}
+.quote-source {
+  display: block; margin-top: 8px; font-style: normal;
+  font-size: 13px; color: var(--text-tertiary); font-weight: 500;
+}
+
+/* ========== Highlight Card ========== */
+.highlight-card {
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+  margin: 20px 0; box-shadow: var(--shadow-sm);
+}
+.highlight-card-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.highlight-card-title .icon { font-size: 18px; }
+
+/* ========== Step List ========== */
+.step-list { list-style: none; margin: 16px 0; }
+.step-item {
+  display: flex; gap: 14px; padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.step-item:last-child { border-bottom: none; }
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.step-content { flex: 1; }
+.step-content-title { font-weight: 600; color: var(--text-primary); font-size: 14.5px; }
+.step-content-desc { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+/* ========== Deep Dive Card ========== */
+.deep-dive-card {
+  background: linear-gradient(135deg, #fff8f0, #fffcf8);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: 24px 28px; margin: 24px 0;
+  box-shadow: var(--shadow-md);
+}
+.deep-dive-label {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+}
+.deep-dive-label::before { content: '\01F50D'; }
+.deep-dive-card p {
+  font-size: 14.5px; color: var(--text-secondary);
+  line-height: 1.85; margin-bottom: 10px;
+}
+.deep-dive-card p:last-child { margin-bottom: 0; }
+
+/* ========== Diagram Container ========== */
+.diagram-container {
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  padding: 24px; margin: 24px 0;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm); overflow-x: auto;
+}
+.diagram-caption {
+  text-align: center; font-size: 13px; color: var(--text-tertiary);
+  margin-top: 12px; font-style: italic;
+}
+
+/* ========== Compare Table ========== */
+.compare-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  overflow: hidden; margin: 24px 0;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+.compare-table thead th {
+  background: var(--accent-light); padding: 14px 18px;
+  font-size: 14px; font-weight: 600; color: var(--text-primary);
+  text-align: left; border-bottom: 2px solid var(--accent);
+}
+.compare-table thead th:first-child { color: var(--text-tertiary); font-weight: 500; }
+.compare-table tbody td {
+  padding: 12px 18px; font-size: 14px; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+.compare-table tbody tr:last-child td { border-bottom: none; }
+.compare-table tbody tr:nth-child(even) { background: rgba(246,241,235,0.4); }
+.compare-table tbody td:first-child {
+  font-weight: 600; color: var(--text-primary); white-space: nowrap;
+}
+
+/* ========== Flow Container ========== */
+.flow-container {
+  display: flex; flex-direction: column; gap: 0;
+  margin: 24px 0; padding: 24px;
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+.flow-container-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 20px; text-align: center;
+}
+.flow-step {
+  display: flex; align-items: stretch; gap: 0;
+  position: relative;
+}
+.flow-step + .flow-step { margin-top: 0; }
+.flow-line {
+  display: flex; flex-direction: column; align-items: center;
+  width: 40px; flex-shrink: 0;
+}
+.flow-dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid; position: relative; z-index: 1;
+}
+.flow-stem {
+  width: 2px; flex: 1; min-height: 16px;
+}
+.flow-content {
+  flex: 1; padding: 8px 0 16px 0;
+}
+.flow-content-title {
+  font-weight: 600; font-size: 14px; color: var(--text-primary);
+}
+.flow-content-desc {
+  font-size: 13px; color: var(--text-tertiary); margin-top: 2px;
+}
+.flow-user .flow-dot { border-color: #c0793c; background: rgba(192,121,60,0.15); }
+.flow-planner .flow-dot { border-color: #5b7db1; background: rgba(91,125,177,0.15); }
+.flow-generator .flow-dot { border-color: #5ba878; background: rgba(91,168,120,0.15); }
+.flow-evaluator .flow-dot { border-color: #b85b5b; background: rgba(184,91,91,0.15); }
+.flow-done .flow-dot { border-color: #5ba878; background: #5ba878; }
+.flow-user .flow-stem { background: #c0793c; }
+.flow-planner .flow-stem { background: #5b7db1; }
+.flow-generator .flow-stem { background: #5ba878; }
+.flow-evaluator .flow-stem { background: #b85b5b; }
+.flow-done .flow-stem { background: #5ba878; }
+
+.flow-loop-box {
+  border: 2px dashed var(--accent); border-radius: var(--radius-lg);
+  padding: 16px 16px 4px; margin-top: 8px;
+  position: relative;
+}
+.flow-loop-label {
+  position: absolute; top: -10px; left: 20px;
+  background: var(--bg-card); padding: 0 10px;
+  font-size: 12px; font-weight: 600; color: var(--accent);
+}
+
+/* ========== Conclusion Block ========== */
+.conclusion-block {
+  text-align: center; padding: 40px 32px;
+  background: linear-gradient(135deg, #fff8f0, var(--bg-card));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  margin: 32px 0;
+}
+.conclusion-icon { font-size: 36px; margin-bottom: 16px; }
+.conclusion-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 14px;
+}
+.conclusion-text {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.85;
+  max-width: 560px; margin: 0 auto;
+}
+
+/* ========== Appendix Card ========== */
+.appendix-card {
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  padding: 28px 32px; margin: 24px 0;
+  box-shadow: var(--shadow-sm);
+}
+.appendix-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+}
+.appendix-title .icon { color: #7c4dff; }
+.appendix-list { list-style: none; }
+.appendix-item {
+  padding: 14px 0; border-bottom: 1px solid var(--border-light);
+  display: flex; gap: 14px;
+}
+.appendix-item:last-child { border-bottom: none; }
+.appendix-item-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(124,77,255,0.1); color: #7c4dff;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.appendix-item-title {
+  font-size: 14.5px; color: var(--text-primary); font-weight: 500;
+  line-height: 1.6;
+}
+.appendix-item-desc {
+  font-size: 13px; color: var(--text-tertiary); margin-top: 4px;
+}
+
+/* ========== Footer ========== */
+.page-footer {
+  text-align: center; padding: 40px 0 60px;
+  font-size: 13px; color: var(--text-tertiary);
+  border-top: 1px solid var(--border-light); margin-top: 48px;
+}
+
+/* ========== Mobile Responsive ========== */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 260px; }
+  .cover-title { font-size: 26px; }
+  .cover-subtitle { font-size: 15px; }
+  .chapter-title { font-size: 20px; }
+  .page-wrapper { padding: 0 16px; }
+  .cover-section { padding: 60px 0 36px; }
+  .toc-card { padding: 20px 20px; }
+  .deep-dive-card { padding: 18px 20px; }
+  .diagram-container { padding: 16px; }
+  .sidebar-toggle { left: 10px; width: 36px; height: 36px; font-size: 16px; }
+  .compare-table thead th, .compare-table tbody td { padding: 10px 12px; font-size: 13px; }
+  .conclusion-block { padding: 28px 20px; }
+  .appendix-card { padding: 20px; }
+  .flow-container { padding: 16px; }
+  .sub-title { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar Toggle -->
+<div class="sidebar-toggle" id="sidebarToggle" title="打开目录导航">&#9776;</div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">目录导航</div>
+    <div class="sidebar-close" id="sidebarClose">&#10005;</div>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-chapter-group" data-chapter="ch1">
+      <div class="sidebar-chapter-link" data-target="ch1">
+        <span class="sidebar-chapter-num">01</span>AI 时代的效率幻象
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch1-s1">Burbn &rarr; Instagram 的启示</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch1-s2">AI 加速开发 &ne; 产品成功</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="ch2">
+      <div class="sidebar-chapter-link" data-target="ch2">
+        <span class="sidebar-chapter-num">02</span>温室树木的隐喻
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch2-s1">室内树 vs 野生树</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch2-s2">功能冗余的陷阱</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch2-s3">电视剧角色隐喻</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="ch3">
+      <div class="sidebar-chapter-link" data-target="ch3">
+        <span class="sidebar-chapter-num">03</span>推倒重写的勇气
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch3-s1">重写不再是禁区</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch3-s2">更早发布的哲学</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch3-s3">Antfooding 内部测试</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="ch4">
+      <div class="sidebar-chapter-link" data-target="ch4">
+        <span class="sidebar-chapter-num">04</span>智能体原生产品设计
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch4-s1">什么是智能体原生</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch4-s2">Claude Code 的启示</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch4-s3">软件的未来形态</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="ch5">
+      <div class="sidebar-chapter-link" data-target="ch5">
+        <span class="sidebar-chapter-num">05</span>Anthropic 内部如何使用 Claude
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch5-s1">产品开发的实际工作流</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch5-s2">100% AI 编码</a></li>
+        <li><a class="sidebar-sub-link" data-target="ch5-s3">Skills 系统</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="ch6">
+      <div class="sidebar-chapter-link" data-target="ch6">
+        <span class="sidebar-chapter-num">06</span>总结与启示
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="ch6">核心观点汇总</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-chapter-group" data-chapter="appendix">
+      <div class="sidebar-chapter-link" data-target="appendix">
+        <span class="sidebar-chapter-num">+</span>附录：延伸阅读
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" data-target="appendix">推荐资源</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="sidebar-progress">
+    <div class="sidebar-progress-label">
+      <span>阅读进度</span>
+      <span id="sidebarProgressPct">0%</span>
+    </div>
+    <div class="sidebar-progress-bar">
+      <div class="sidebar-progress-fill" id="sidebarProgressFill"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== Main Content ==================== -->
+<div class="page-wrapper">
+<main class="content">
+
+<!-- ========== Cover Section ========== -->
+<section class="cover-section">
+  <div class="cover-badge">AI 产品开发</div>
+  <h1 class="cover-title">Anthropic 如何使用 Claude<br>构建 AI 产品</h1>
+  <p class="cover-subtitle">Mike Krieger（Instagram 联合创始人、Anthropic CPO）深度对话</p>
+  <div class="cover-meta">
+    <span>来源：Every「AI &amp; I」播客</span>
+    <span>|</span>
+    <span>主持人：Dan Shipper</span>
+  </div>
+  <div class="cover-divider"></div>
+</section>
+
+<!-- ========== TOC Card ========== -->
+<div class="toc-card">
+  <div class="toc-card-title">目录</div>
+  <ul class="toc-list">
+    <li class="toc-item" data-target="ch1"><span class="toc-num">01</span><span class="toc-item-text">AI 时代的效率幻象</span></li>
+    <li class="toc-item" data-target="ch2"><span class="toc-num">02</span><span class="toc-item-text">温室树木的隐喻</span></li>
+    <li class="toc-item" data-target="ch3"><span class="toc-num">03</span><span class="toc-item-text">推倒重写的勇气</span></li>
+    <li class="toc-item" data-target="ch4"><span class="toc-num">04</span><span class="toc-item-text">智能体原生产品设计</span></li>
+    <li class="toc-item" data-target="ch5"><span class="toc-num">05</span><span class="toc-item-text">Anthropic 内部如何使用 Claude</span></li>
+    <li class="toc-item" data-target="ch6"><span class="toc-num">06</span><span class="toc-item-text">总结与启示</span></li>
+    <li class="toc-item" data-target="appendix"><span class="toc-num">+</span><span class="toc-item-text">附录：延伸阅读</span></li>
+  </ul>
+</div>
+
+<!-- ==================== Chapter 1 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch1">
+  <div class="chapter-header">
+    <span class="chapter-num">01</span>
+    <h2 class="chapter-title">AI 时代的效率幻象</h2>
+  </div>
+
+  <h3 class="sub-title" id="ch1-s1">Burbn &rarr; Instagram 的启示</h3>
+  <p class="para">Mike Krieger 回忆 Instagram 的诞生：他们最初做 Burbn 花了整整一年，功能繁杂，签到、计划、照片分享应有尽有——但行不通。后来痛下决心转型，只保留照片分享核心功能，Instagram 由此诞生，而这次转型只花了 3 个月。</p>
+
+  <p class="para">令人震撼的是，Mike 用 Claude 仅花 2 小时就重建了当年 Burbn 的全部功能。更令人惊讶的是，Claude 甚至预知了产品的演进方向——它提前在代码中加入了滤镜功能，仿佛"知道" Instagram 最终会走向何方。</p>
+
+  <div class="quote-block">
+    模型非常擅长"增加功能"，但它不擅长"知道该砍掉什么"。这种判断力需要在现实世界中大量实践才能理解。
+    <span class="quote-source">—— Mike Krieger</span>
+  </div>
+
+  <h3 class="sub-title" id="ch1-s2">AI 加速开发 &ne; 产品成功</h3>
+  <p class="para"><strong>核心矛盾：</strong>AI 可以让你在几小时内构建出任何东西，但它无法告诉你应该构建什么。模型的能力在于"增加"，而非"精简"——这正是产品成功的关键分水岭。</p>
+
+  <p class="para">Mike 反思：为何在 AI 加速开发的时代，依然没有出现很多现象级产品？原因在于：即使 AI 能极大提高开发效率，但"你想对世界做出什么样的干预"——这个根本性问题，仍然需要时间磨练、试错和深入思考。</p>
+
+  <div class="highlight-card">
+    <div class="highlight-card-title"><span class="icon">&#9889;</span>关键洞察</div>
+    <p class="para">效率的提升并没有降低产品成功的门槛。相反，它让"快速试错"变得更容易的同时，也让"功能堆砌"变得更具诱惑力。真正的产品能力，在于知道什么该保留、什么该砍掉。</p>
+  </div>
+
+  <!-- Deep Dive: Vibe Coding -->
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">Vibe Coding（氛围感编程）</div>
+    <p><strong>定义：</strong>开发者不再手写具体的代码行，而是通过"传达意图、调整方向、描述感觉"来驱动 AI 生成整个应用。编程的范式从"精确指令"转变为"意图描述"。</p>
+    <p><strong>直觉：</strong>就像你不是亲手盖房子，而是告诉建筑师"我要一个温暖的、有落地窗的房子"，建筑师就帮你盖好了。你关注的是"感觉"，而非每一块砖的位置。</p>
+    <p><strong>原理：</strong>开发者用自然语言描述需求 &rarr; AI（如 Claude Code）理解意图 &rarr; 生成完整代码 &rarr; 开发者审查和调整。整个过程，开发者扮演的是"导演"角色，AI 是"执行团队"。</p>
+    <p><strong>对比：</strong>传统编程是精确指令——"建一堵 3 米高的墙"；Vibe Coding 是意图驱动——"让这个空间感觉更开放"。前者控制每一个细节，后者关注整体方向。</p>
+    <p><strong>代价：</strong>效率极高但容易失控——功能越堆越多，产品越来越复杂，开发者逐渐失去了对"什么该留、什么该砍"的直觉判断。正如 Mike Krieger 所警告的，AI 最擅长的恰恰是"加功能"，而这恰恰是最危险的。</p>
+  </div>
+</section>
+
+<!-- ==================== Chapter 2 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch2">
+  <div class="chapter-header">
+    <span class="chapter-num">02</span>
+    <h2 class="chapter-title">温室树木的隐喻</h2>
+  </div>
+
+  <h3 class="sub-title" id="ch2-s1">室内树 vs 野生树</h3>
+  <p class="para"><strong>Dan Shipper 的隐喻：</strong>如果你在室内种一棵树，不让它接触风，它就不会长得那么强壮。它需要外力的磨练才能长成真正的树。室内树看似完整——枝繁叶茂、绿意盎然——但它的根系浅薄、枝干纤细，和经历风雨的野外树完全不同。</p>
+
+  <p class="para">AI 开发就像在室内种一棵完整的树——你迅速拥有了这个完整的东西，但它每一步都没有经过直觉的锤炼和经验的磨练。每一个功能的添加，都不是因为"用户需要"，而是因为"AI 可以做到"。</p>
+
+  <!-- SVG Diagram 1: Indoor Tree vs Wild Tree -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#9e9182"/>
+        </marker>
+        <linearGradient id="greenhouseGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e8f5e9" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#c8e6c9" stop-opacity="0.3"/>
+        </linearGradient>
+        <linearGradient id="wildBgGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e3f2fd" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#bbdefb" stop-opacity="0.15"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Left: Indoor Tree -->
+      <rect x="20" y="20" width="340" height="340" rx="12" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <rect x="30" y="30" width="320" height="200" rx="8" fill="url(#greenhouseGrad)" stroke="#a5d6a7" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="190" y="55" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif" font-weight="600">温室罩</text>
+
+      <!-- Indoor tree trunk -->
+      <rect x="180" y="140" width="20" height="120" rx="3" fill="#bcaaa4"/>
+      <!-- Weak branches -->
+      <line x1="190" y1="170" x2="130" y2="130" stroke="#a5d6a7" stroke-width="2.5"/>
+      <line x1="190" y1="155" x2="250" y2="120" stroke="#a5d6a7" stroke-width="2"/>
+      <line x1="190" y1="185" x2="120" y2="165" stroke="#a5d6a7" stroke-width="2"/>
+      <line x1="190" y1="180" x2="265" y2="155" stroke="#a5d6a7" stroke-width="1.8"/>
+      <line x1="190" y1="200" x2="140" y2="195" stroke="#a5d6a7" stroke-width="1.5"/>
+      <line x1="190" y1="195" x2="255" y2="190" stroke="#a5d6a7" stroke-width="1.5"/>
+      <line x1="190" y1="160" x2="160" y2="100" stroke="#a5d6a7" stroke-width="1.8"/>
+      <line x1="190" y1="150" x2="220" y2="95" stroke="#a5d6a7" stroke-width="1.5"/>
+      <!-- Leaves clusters -->
+      <circle cx="130" cy="125" r="14" fill="#c8e6c9" opacity="0.8"/>
+      <circle cx="250" cy="115" r="12" fill="#c8e6c9" opacity="0.8"/>
+      <circle cx="120" cy="160" r="10" fill="#c8e6c9" opacity="0.7"/>
+      <circle cx="265" cy="150" r="11" fill="#c8e6c9" opacity="0.7"/>
+      <circle cx="160" cy="95" r="12" fill="#c8e6c9" opacity="0.7"/>
+      <circle cx="220" cy="90" r="10" fill="#c8e6c9" opacity="0.7"/>
+      <circle cx="140" cy="192" r="8" fill="#c8e6c9" opacity="0.6"/>
+      <circle cx="255" cy="187" r="9" fill="#c8e6c9" opacity="0.6"/>
+
+      <!-- Pot -->
+      <path d="M155,260 L145,300 L235,300 L225,260 Z" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1.5"/>
+      <rect x="148" y="255" width="84" height="10" rx="3" fill="#bcaaa4"/>
+
+      <!-- Labels -->
+      <text x="190" y="325" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">功能堆砌、未经考验</text>
+      <text x="190" y="348" text-anchor="middle" fill="#9e9182" font-size="12" font-family="Noto Sans SC, sans-serif">AI 生成的室内树</text>
+
+      <!-- Center: VS Arrow -->
+      <line x1="375" y1="180" x2="405" y2="180" stroke="#9e9182" stroke-width="2" marker-end="url(#arrowGray)"/>
+      <text x="390" y="170" text-anchor="middle" fill="#9e9182" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">VS</text>
+
+      <!-- Right: Wild Tree -->
+      <rect x="420" y="20" width="340" height="340" rx="12" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <rect x="430" y="30" width="320" height="200" rx="8" fill="url(#wildBgGrad)"/>
+
+      <!-- Rain/wind symbols -->
+      <text x="460" y="55" fill="#90a4ae" font-size="14">&#127782;&#65039;</text>
+      <text x="500" y="48" fill="#90a4ae" font-size="12">&#127783;&#65039;</text>
+      <text x="680" y="60" fill="#90a4ae" font-size="13">&#127782;&#65039;</text>
+
+      <!-- Wild tree trunk (thick) -->
+      <rect x="575" y="120" width="30" height="140" rx="5" fill="#8d6e63"/>
+      <!-- Strong root lines -->
+      <path d="M580,260 Q560,275 540,270" stroke="#8d6e63" stroke-width="4" fill="none"/>
+      <path d="M600,260 Q620,275 650,270" stroke="#8d6e63" stroke-width="4" fill="none"/>
+      <path d="M590,260 Q590,280 590,285" stroke="#8d6e63" stroke-width="3" fill="none"/>
+
+      <!-- Strong branches -->
+      <line x1="590" y1="165" x2="510" y2="110" stroke="#66bb6a" stroke-width="5"/>
+      <line x1="590" y1="150" x2="670" y2="95" stroke="#66bb6a" stroke-width="4.5"/>
+      <line x1="590" y1="195" x2="520" y2="175" stroke="#66bb6a" stroke-width="3.5"/>
+      <!-- Leaves -->
+      <circle cx="505" cy="105" r="20" fill="#81c784" opacity="0.9"/>
+      <circle cx="670" cy="90" r="18" fill="#81c784" opacity="0.9"/>
+      <circle cx="515" cy="170" r="14" fill="#81c784" opacity="0.8"/>
+
+      <!-- Ground -->
+      <rect x="430" y="260" width="320" height="8" rx="4" fill="#a5d6a7" opacity="0.4"/>
+
+      <!-- Labels -->
+      <text x="590" y="325" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">精简迭代、用户验证</text>
+      <text x="590" y="348" text-anchor="middle" fill="#9e9182" font-size="12" font-family="Noto Sans SC, sans-serif">经历风雨的野外树</text>
+    </svg>
+    <div class="diagram-caption">图 1：室内树 vs 野生树 —— AI 生成的产品（左）枝繁叶茂但根基浅薄，经历真实世界磨练的产品（右）枝干精炼但根基深厚</div>
+  </div>
+
+  <h3 class="sub-title" id="ch2-s2">功能冗余的陷阱</h3>
+  <p class="para">Mike 在实验室做项目时，亲身体会到了这种诱惑。在进入 Early Access 之前，他就把 V1 版本过度开发了。他的内心独白是："既然有这个选项，为什么不把那个也加上？"——这正是 Vibe Coding 带来的功能膨胀陷阱。</p>
+
+  <h3 class="sub-title" id="ch2-s3">电视剧角色隐喻</h3>
+  <div class="quote-block">
+    向某人展示一棵完全长成的树，就像"你被直接扔进电视剧最后一集"——"等等，这些人都是谁？我居然被要求已经掌握了所有背景信息。"
+    <span class="quote-source">—— Dan Shipper</span>
+  </div>
+
+  <p class="para">Dan 自己的经历更加印证了这一点。他用 Vibe Coding 做应用 Proof 时，因为太好玩、太上瘾，创造出了一个难用的庞然大物。后来他受到 Monologue（一个极简语音转文字应用）的启发，毅然扔掉原来的产品，重做了一个极简版本——结果在 Every 内部病毒式传播。</p>
+
+  <div class="highlight-card">
+    <div class="highlight-card-title"><span class="icon">&#127793;</span>核心教训</div>
+    <p class="para">室内树看似完整，但缺乏经风雨锤炼的根基。用 AI 快速构建的产品，如果每一项功能都不是为了解决真实的用户问题而存在，那它就是一棵温室里的树——看起来枝繁叶茂，一阵风就可能吹倒。</p>
+  </div>
+</section>
+
+<!-- ==================== Chapter 3 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch3">
+  <div class="chapter-header">
+    <span class="chapter-num">03</span>
+    <h2 class="chapter-title">推倒重写的勇气</h2>
+  </div>
+
+  <h3 class="sub-title" id="ch3-s1">重写不再是禁区</h3>
+  <p class="para"><strong>经典理论：</strong>Fred Brooks 在《人月神话》中严厉警告不要重写软件，还有著名的"第二系统综合症"——设计师在设计第二个系统时，倾向于把第一个系统中省略的所有"精彩想法"一股脑加上，导致过度设计。此外，Netscape 因重写浏览器而拖垮公司的教训，至今仍被引用。</p>
+
+  <p class="para"><strong>Mike 的不同看法：</strong>这些理论依然有道理，但时代已经变了。现在模型可以帮你做 Diff（代码对比），检查是否遗漏了第一版本的核心内容。重写不再是拖垮公司长达一年的计划——现在只需要几天。</p>
+
+  <!-- Deep Dive: The Mythical Man-Month -->
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">《人月神话》与第二系统综合症</div>
+    <p><strong>定义：</strong>Fred Brooks 1975 年出版的软件工程经典著作，提出了著名的"布鲁克斯法则"——向一个延期的软件项目增加人手只会使它更加延期。</p>
+    <p><strong>直觉：</strong>就像厨房里已经有太多厨师，再加人只会让场面更混乱，而不是更高效。沟通成本随人数呈指数级增长。</p>
+    <p><strong>原理：</strong>第二系统综合症（Second-System Effect）指设计师在设计第二个系统时，倾向于加入第一个系统中刻意省略的所有"精彩想法"，导致过度设计。因为第一次克制了自己的创意冲动，第二次就变本加厉地释放。</p>
+    <p><strong>对比：</strong>AI 时代，重写的成本从"一年"缩短到"几天"。模型能做 Diff 对比，大幅降低了遗漏风险。这让"第二系统综合症"的危险大大降低——你不需要一次性加完所有功能，因为重写的代价很低。</p>
+    <p><strong>代价：</strong>仍需警惕——即使重写成本低，频繁推倒重来也可能浪费团队信心和用户信任。关键是在"迭代改进"和"推倒重来"之间找到正确节奏。</p>
+  </div>
+
+  <h3 class="sub-title" id="ch3-s2">更早发布的哲学</h3>
+  <p class="para"><strong>Anthropic 的实际做法：</strong>多个项目先构建完整版本，发现搞复杂了或核心假设错误后，直接推倒做 V2。团队并不觉得"白建了一年"，而是"那是上周的事，这周我可以重做"。</p>
+
+  <div class="quote-block">
+    不能假设在发布前就知道产品需要每一个功能。你必须更早地发布，更早地获取反馈。
+    <span class="quote-source">—— Mike Krieger</span>
+  </div>
+
+  <h3 class="sub-title" id="ch3-s3">Antfooding 内部测试</h3>
+  <p class="para">Anthropic 有一个内部试用者群体叫 "Antfooders"——源自"吃自己的狗粮"（Dogfooding）。Anthropic 员工自称 Ants（蚂蚁），所以 Dogfooding 变成了 Antfooding。Co-worker 产品就是典型案例：打磨了很久，但一旦决定发布，就以最简约方式在 10 天内推出 V1。</p>
+
+  <!-- Deep Dive: Dogfooding vs Antfooding -->
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">Dogfooding 与 Antfooding</div>
+    <p><strong>定义：</strong>Dogfooding = "吃自己的狗粮"（Eat your own dog food），即公司内部使用自己开发的产品。Anthropic 版本叫 Antfooding——Ants（蚂蚁，Anthropic 员工自称）+ Dogfooding 的合成词。</p>
+    <p><strong>直觉：</strong>就像厨师自己做菜自己先尝，确认味道没问题再端给客人。如果连自己都不愿意用，怎么指望用户喜欢？</p>
+    <p><strong>原理：</strong>内部测试能发现大量 Bug 和体验问题，因为团队成员对产品的容错度反而更低。但也有局限性——内部用户对产品太熟悉，无法代表真实用户的首次体验。</p>
+    <p><strong>对比：</strong>Antfooding 只是第一步，真实用户反馈才是最终验证。Mike 坦言："在这产品真正进入现实世界之前，内部测试也只能带你走这么远。"但至少，Antfooding 能确保基本质量。</p>
+    <p><strong>代价：</strong>过早发布可能伤害品牌，过晚发布可能错过市场窗口。Anthropic 的"10 天法则"是一个平衡点——足够短以保持敏捷，足够长以确保基本质量。</p>
+  </div>
+
+  <!-- SVG Diagram 2: Traditional vs AI-era Development Flow -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#9e9182"/>
+        </marker>
+        <marker id="arrowDown" markerWidth="6" markerHeight="8" refX="3" refY="8" orient="auto">
+          <path d="M0,0 L3,8 L6,0" fill="#9e9182"/>
+        </marker>
+      </defs>
+
+      <!-- Left Column: Traditional -->
+      <rect x="20" y="15" width="350" height="430" rx="12" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <rect x="30" y="25" width="330" height="35" rx="6" fill="rgba(107,94,79,0.08)"/>
+      <text x="195" y="48" text-anchor="middle" fill="#2c2418" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">传统开发流程</text>
+
+      <!-- Steps -->
+      <rect x="55" y="80" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="195" y="104" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">需求分析（2-4 周）</text>
+
+      <line x1="195" y1="118" x2="195" y2="132" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="55" y="136" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="195" y="160" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">设计（2-4 周）</text>
+
+      <line x1="195" y1="174" x2="195" y2="188" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="55" y="192" width="280" height="50" rx="6" fill="rgba(192,121,60,0.1)" stroke="#c0793c" stroke-width="1.5"/>
+      <text x="195" y="213" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">开发编码</text>
+      <text x="195" y="233" text-anchor="middle" fill="#c0793c" font-size="12" font-family="Noto Sans SC, sans-serif">（数月 &mdash; 数年）&#128674;</text>
+
+      <line x1="195" y1="242" x2="195" y2="256" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="55" y="260" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="195" y="284" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">测试 QA（2-4 周）</text>
+
+      <line x1="195" y1="298" x2="195" y2="312" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="55" y="316" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="195" y="340" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">发布上线</text>
+
+      <line x1="195" y1="354" x2="195" y2="368" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="55" y="372" width="280" height="38" rx="6" fill="rgba(184,91,91,0.1)" stroke="#b85b5b" stroke-width="1"/>
+      <text x="195" y="396" text-anchor="middle" fill="#b85b5b" font-size="13" font-family="Noto Sans SC, sans-serif">用户反馈（半年一个循环）&#128260;</text>
+
+      <!-- Cycle bracket -->
+      <path d="M340,80 Q360,230 340,410" stroke="#9e9182" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+      <text x="365" y="240" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif" transform="rotate(90,365,240)">半年 ~ 一年</text>
+
+      <!-- Right Column: AI-era -->
+      <rect x="410" y="15" width="350" height="430" rx="12" fill="#fffcf8" stroke="#c0793c" stroke-width="1.5"/>
+      <rect x="420" y="25" width="330" height="35" rx="6" fill="rgba(192,121,60,0.12)"/>
+      <text x="585" y="48" text-anchor="middle" fill="#c0793c" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">AI 时代开发流程</text>
+
+      <!-- Steps -->
+      <rect x="445" y="80" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="585" y="104" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">意图描述（几分钟）</text>
+
+      <line x1="585" y1="118" x2="585" y2="132" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="445" y="136" width="280" height="50" rx="6" fill="rgba(91,168,120,0.12)" stroke="#5ba878" stroke-width="1.5"/>
+      <text x="585" y="157" text-anchor="middle" fill="#5ba878" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">AI 生成 V1</text>
+      <text x="585" y="177" text-anchor="middle" fill="#5ba878" font-size="12" font-family="Noto Sans SC, sans-serif">（几小时）&#9889;</text>
+
+      <line x1="585" y1="186" x2="585" y2="200" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="445" y="204" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="585" y="228" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">Antfooding 内部测试</text>
+
+      <line x1="585" y1="242" x2="585" y2="256" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="445" y="260" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="585" y="284" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">发布极简 V1</text>
+
+      <line x1="585" y1="298" x2="585" y2="312" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="445" y="316" width="280" height="38" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="585" y="340" text-anchor="middle" fill="#6b5e4f" font-size="13" font-family="Noto Sans SC, sans-serif">用户反馈</text>
+
+      <line x1="585" y1="354" x2="585" y2="368" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+      <rect x="445" y="372" width="280" height="38" rx="6" fill="rgba(192,121,60,0.1)" stroke="#c0793c" stroke-width="1.5"/>
+      <text x="585" y="396" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="600" font-family="Noto Sans SC, sans-serif">推倒重写或迭代 &#128260;</text>
+
+      <!-- Cycle bracket -->
+      <path d="M730,136 Q750,280 730,410" stroke="#c0793c" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+      <text x="755" y="290" fill="#c0793c" font-size="11" font-weight="600" font-family="Noto Sans SC, sans-serif" transform="rotate(90,755,290)">一周 ~ 数周</text>
+
+      <!-- Loop arrow from bottom back to AI Generate -->
+      <path d="M445,391 Q420,391 420,370 L420,161 Q420,150 432,150 L445,150" stroke="#c0793c" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowDown)"/>
+    </svg>
+    <div class="diagram-caption">图 2：传统软件开发 vs AI 时代开发流程对比 —— AI 将开发周期从数月压缩到数小时，使"推倒重来"不再是禁区</div>
+  </div>
+</section>
+
+<!-- ==================== Chapter 4 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch4">
+  <div class="chapter-header">
+    <span class="chapter-num">04</span>
+    <h2 class="chapter-title">智能体原生产品设计</h2>
+  </div>
+
+  <h3 class="sub-title" id="ch4-s1">什么是智能体原生</h3>
+  <p class="para"><strong>Dan Shipper 的定义：</strong>智能体必须能够像用户一样使用应用中的任何功能。不是通过 API 间接访问，而是像真人一样——点击按钮、填写表单、浏览菜单。</p>
+
+  <p class="para"><strong>Mike Krieger 的三层解读：</strong></p>
+
+  <ul class="step-list">
+    <li class="step-item">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <div class="step-content-title">第一层：普通人终于能"用电脑"了</div>
+        <div class="step-content-desc">以前只有懂命令行的人才能做到的事，现在 Claude 可以帮你做。AI 降低了使用计算能力的门槛。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <div class="step-content-title">第二层：Claude AI 仍需进化</div>
+        <div class="step-content-desc">Claude Code 已经做得很出色，但 Claude AI（网页版/App）仍有差距。用户想让 Claude 把作品添加到项目知识库，Claude 回答"让我告诉你去哪里点按钮"——这是错的，它应该原生完成操作。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <div class="step-content-title">第三层：智能体可以修改"运行框架"本身</div>
+        <div class="step-content-desc">不需要坐在那想"我希望 Gmail 的运作方式能稍微改一下"，而是直接要求智能体去改。这不是使用工具，而是重塑工具。</div>
+      </div>
+    </li>
+  </ul>
+
+  <h3 class="sub-title" id="ch4-s2">Claude Code 的启示</h3>
+  <p class="para">Mike 讲述了一个精彩的故事：他让 Claude Code 把 Dan 关于"智能体原生"的文章打包成一个 Skill。Claude 首先查找自己的"技能开发技能"（meta-skill），然后按照这个技能的标准流程，创建并安装了新技能——整个过程展示了 AI 掌握自身知识后解锁的巨大能力。</p>
+
+  <p class="para"><strong>验证（Verification）的新范式：</strong>传统产品可以写端到端的逻辑测试，覆盖每条用户路径。但智能体原生产品的魅力恰恰在于不可预测性——AI 能发现开发者从未想过的使用方式。实验室反复讨论的核心问题是：如何提高验证的保真度（Fidelity），在保持灵活性的同时确保安全。</p>
+
+  <h3 class="sub-title" id="ch4-s3">软件的未来形态</h3>
+  <p class="para">智能体原生设计代表了软件设计哲学的根本转变。传统设计追求护栏（Guardrails）和确定性，确保用户只能走预设路径。AI 时代的产品需要创造超灵活的可扩展体，让智能体能自主调用底层功能、理解用户意图——但这同时带来了验证和安全性的巨大挑战。</p>
+
+  <!-- Deep Dive: Agent-Native Design -->
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">智能体原生（Agent-Native）设计</div>
+    <p><strong>定义：</strong>软件从一开始就设计为可以让 AI 智能体像人类用户一样使用所有功能，而非仅仅提供 API 接口。智能体不是"旁观者"，而是"第一公民"。</p>
+    <p><strong>直觉：</strong>传统软件像自动售货机——你只能按已有的按钮。智能体原生软件像有万能钥匙的管家——可以打开任何门、使用任何工具，甚至改造房屋结构。</p>
+    <p><strong>原理：</strong>传统设计理念追求护栏（Guardrails）和测试，确保用户只能走一条路径。智能体原生设计创造超灵活的可扩展体，AI 可以自主调用底层功能、理解用户意图，甚至发现开发者未设想的使用方式。</p>
+    <p><strong>对比：</strong>传统工程师追求确定性 &rarr; 用户只能走预设路径。AI 时代产品需要灵活性 &rarr; 智能体能探索任何路径。从"高速公路"到"开放丛林"。</p>
+    <p><strong>代价：</strong>灵活性增加导致测试难度暴增。如何在保持灵活性的同时确保可靠性和安全性，是当前 AI 产品面临的核心挑战。验证保真度（Verification Fidelity）成为新的技术前沿。</p>
+  </div>
+
+  <!-- Deep Dive: Harness -->
+  <div class="deep-dive-card">
+    <div class="deep-dive-label">运行框架（Harness）</div>
+    <p><strong>定义：</strong>围绕 AI 模型构建的整套基础设施。模型负责推理（思考），Harness 负责执行（动手）。两者结合，才构成一个完整的 AI 系统。</p>
+    <p><strong>直觉：</strong>就像赛车——模型是车手（做决策），Harness 是整辆赛车（引擎、轮胎、方向盘）。AI 时代的突破是：车手现在可以改装赛车本身。</p>
+    <p><strong>原理：</strong>Harness 包括文件系统访问、Shell 执行、API 调用、工具集成等。在 Claude Code 中，Harness 就是终端环境 + 文件读写 + 命令执行能力的总和。</p>
+    <p><strong>对比：</strong>固定 Harness = 工具不可改变，用户只能使用预设功能。可修改 Harness = 智能体可以改变自己的工具集和工作方式，根据任务需求动态适配。</p>
+    <p><strong>代价：</strong>让 AI 修改自己的执行环境增加了安全风险。需要沙盒（Sandbox）和权限控制机制，防止智能体的自我修改导致不可预见的后果。</p>
+  </div>
+
+  <!-- SVG Diagram 3: Traditional vs Agent-Native Architecture -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrowDown2" markerWidth="6" markerHeight="8" refX="3" refY="8" orient="auto">
+          <path d="M0,0 L3,8 L6,0" fill="#9e9182"/>
+        </marker>
+        <marker id="arrowAccent" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#c0793c"/>
+        </marker>
+      </defs>
+
+      <!-- Left: Traditional Product -->
+      <rect x="20" y="15" width="350" height="390" rx="12" fill="#fffcf8" stroke="#e4ddd3" stroke-width="1.5"/>
+      <rect x="30" y="25" width="330" height="32" rx="6" fill="rgba(107,94,79,0.08)"/>
+      <text x="195" y="47" text-anchor="middle" fill="#2c2418" font-size="13" font-weight="700" font-family="Noto Sans SC, sans-serif">传统产品架构</text>
+
+      <!-- User -->
+      <rect x="70" y="75" width="250" height="36" rx="6" fill="#fff3e0" stroke="#c0793c" stroke-width="1"/>
+      <text x="195" y="98" text-anchor="middle" fill="#c0793c" font-size="13" font-family="Noto Sans SC, sans-serif">用户界面（UI）</text>
+      <line x1="195" y1="111" x2="195" y2="125" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown2)"/>
+
+      <!-- Fixed Functions -->
+      <rect x="55" y="130" width="100" height="40" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="105" y="155" text-anchor="middle" fill="#6b5e4f" font-size="12" font-family="Noto Sans SC, sans-serif">功能 A</text>
+      <rect x="165" y="130" width="100" height="40" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="215" y="155" text-anchor="middle" fill="#6b5e4f" font-size="12" font-family="Noto Sans SC, sans-serif">功能 B</text>
+      <rect x="275" y="130" width="80" height="40" rx="6" fill="#f5f0ea" stroke="#e4ddd3" stroke-width="1"/>
+      <text x="315" y="155" text-anchor="middle" fill="#6b5e4f" font-size="12" font-family="Noto Sans SC, sans-serif">功能 C</text>
+
+      <!-- Guardrails -->
+      <rect x="55" y="185" width="300" height="30" rx="4" fill="rgba(184,91,91,0.08)" stroke="#b85b5b" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="205" y="205" text-anchor="middle" fill="#b85b5b" font-size="11" font-family="Noto Sans SC, sans-serif">护栏（Guardrails）—— 预设路径</text>
+
+      <line x1="195" y1="215" x2="195" y2="232" stroke="#9e9182" stroke-width="1.5" marker-end="url(#arrowDown2)"/>
+
+      <!-- Fixed Data -->
+      <rect x="70" y="237" width="250" height="36" rx="6" fill="#e8eaf6" stroke="#9fa8da" stroke-width="1"/>
+      <text x="195" y="260" text-anchor="middle" fill="#5c6bc0" font-size="13" font-family="Noto Sans SC, sans-serif">固定数据层</text>
+
+      <!-- Label -->
+      <rect x="60" y="290" width="270" height="24" rx="4" fill="rgba(158,145,130,0.08)"/>
+      <text x="195" y="307" text-anchor="middle" fill="#9e9182" font-size="11" font-family="Noto Sans SC, sans-serif">预设路径、护栏保护</text>
+
+      <!-- Right: Agent-Native Product -->
+      <rect x="410" y="15" width="350" height="390" rx="12" fill="#fffcf8" stroke="#c0793c" stroke-width="1.5"/>
+      <rect x="420" y="25" width="330" height="32" rx="6" fill="rgba(192,121,60,0.12)"/>
+      <text x="585" y="47" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="700" font-family="Noto Sans SC, sans-serif">智能体原生产品架构</text>
+
+      <!-- User/Agent -->
+      <rect x="440" y="75" width="120" height="36" rx="6" fill="#fff3e0" stroke="#c0793c" stroke-width="1"/>
+      <text x="500" y="98" text-anchor="middle" fill="#c0793c" font-size="12" font-family="Noto Sans SC, sans-serif">用户</text>
+      <rect x="580" y="75" width="160" height="36" rx="6" fill="rgba(91,168,120,0.12)" stroke="#5ba878" stroke-width="1.5"/>
+      <text x="660" y="98" text-anchor="middle" fill="#5ba878" font-size="12" font-weight="600" font-family="Noto Sans SC, sans-serif">AI 智能体</text>
+
+      <line x1="585" y1="111" x2="585" y2="125" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown2)"/>
+
+      <!-- Unified Interface -->
+      <rect x="445" y="130" width="280" height="36" rx="6" fill="rgba(192,121,60,0.08)" stroke="#c0793c" stroke-width="1"/>
+      <text x="585" y="153" text-anchor="middle" fill="#c0793c" font-size="13" font-weight="500" font-family="Noto Sans SC, sans-serif">统一接口层</text>
+
+      <line x1="585" y1="166" x2="585" y2="180" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown2)"/>
+
+      <!-- Dynamic Functions -->
+      <rect x="445" y="185" width="280" height="44" rx="6" fill="rgba(91,168,120,0.08)" stroke="#5ba878" stroke-width="1.5"/>
+      <text x="585" y="205" text-anchor="middle" fill="#5ba878" font-size="12" font-weight="500" font-family="Noto Sans SC, sans-serif">可动态调用的功能集</text>
+      <text x="585" y="222" text-anchor="middle" fill="#5ba878" font-size="11" font-family="Noto Sans SC, sans-serif">功能 A | 功能 B | 功能 C | ...</text>
+
+      <line x1="585" y1="229" x2="585" y2="243" stroke="#c0793c" stroke-width="1.5" marker-end="url(#arrowDown2)"/>
+
+      <!-- Modifiable Harness -->
+      <rect x="445" y="248" width="280" height="44" rx="6" fill="rgba(91,125,177,0.08)" stroke="#5b7db1" stroke-width="1.5"/>
+      <text x="585" y="268" text-anchor="middle" fill="#5b7db1" font-size="12" font-weight="500" font-family="Noto Sans SC, sans-serif">可修改的运行框架（Harness）</text>
+      <text x="585" y="285" text-anchor="middle" fill="#5b7db1" font-size="11" font-family="Noto Sans SC, sans-serif">文件系统 | Shell | API | 工具集成</text>
+
+      <!-- Label -->
+      <rect x="450" y="310" width="270" height="24" rx="4" fill="rgba(192,121,60,0.08)"/>
+      <text x="585" y="327" text-anchor="middle" fill="#c0793c" font-size="11" font-weight="500" font-family="Noto Sans SC, sans-serif">灵活扩展、自主调用</text>
+
+      <!-- Bidirectional arrow between dynamic functions and harness -->
+      <path d="M730,207 L740,207 L740,270 L730,270" stroke="#5b7db1" stroke-width="1" fill="none" marker-end="url(#arrowAccent)"/>
+    </svg>
+    <div class="diagram-caption">图 3：传统产品 vs 智能体原生产品架构对比 —— 从预设路径到灵活扩展，从护栏保护到自主调用</div>
+  </div>
+</section>
+
+<!-- ==================== Chapter 5 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch5">
+  <div class="chapter-header">
+    <span class="chapter-num">05</span>
+    <h2 class="chapter-title">Anthropic 内部如何使用 Claude</h2>
+  </div>
+
+  <h3 class="sub-title" id="ch5-s1">产品开发的实际工作流</h3>
+  <p class="para">Mike Krieger 透露了一个令人震惊的事实：Claude 的核心产品和 Claude Code 几乎完全由 Claude 自己编写完成。在 Anthropic，大多数产品基本可以说是 100% AI 编码。</p>
+
+  <p class="para">这并不意味着人类开发者被取代了。相反，他们的角色发生了根本性转变——从"写代码的人"变成了"告诉 AI 写什么代码的人"。核心能力从"实现"转向了"判断"。</p>
+
+  <h3 class="sub-title" id="ch5-s2">100% AI 编码</h3>
+  <p class="para">Anthropic 的产品开发流程已经成为一个教科书级别的 AI-native 实践案例。产品经理和工程师用自然语言描述意图，Claude Code 生成代码，团队审查和调整。整个过程中，AI 承担了绝大部分的编码工作。</p>
+
+  <div class="quote-block">
+    一旦你知道要构建什么，实际的构建过程确实容易多了。
+    <span class="quote-source">—— Mike Krieger</span>
+  </div>
+
+  <h3 class="sub-title" id="ch5-s3">Skills 系统</h3>
+  <p class="para"><strong>Skills 系统</strong>是 Anthropic 内部的一项关键创新：将最佳实践打包成可复用的"技能"。例如 Mike 将 Dan 的"智能体原生"文章打包成 Skill，以后做原型开发时 Claude 就会自动以智能体原生的方式思考。</p>
+
+  <p class="para"><strong>Skills 的创建流程：</strong></p>
+  <ul class="step-list">
+    <li class="step-item">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <div class="step-content-title">发起请求</div>
+        <div class="step-content-desc">"嘿 Claude，你能为此创建一个技能吗？"</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <div class="step-content-title">元技能查找</div>
+        <div class="step-content-desc">Claude 查找自己的"技能开发技能"（meta-skill），理解如何创建技能</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <div class="step-content-title">创建与安装</div>
+        <div class="step-content-desc">Claude 按标准流程创建新技能并安装到本地环境</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <div class="step-content-title">重启生效</div>
+        <div class="step-content-desc">重启 Claude Code 后，新技能即可在后续开发中自动生效</div>
+      </div>
+    </li>
+  </ul>
+
+  <p class="para">模板化与技能化的平衡是关键：好的模板和示例给模型提供良好的模式和范式，而 Skills 系统则让这些范式可以被系统性地复用和传播。</p>
+
+  <!-- Flow Container: Anthropic Product Development Workflow -->
+  <div class="flow-container">
+    <div class="flow-container-title">Anthropic 产品开发工作流</div>
+
+    <div class="flow-step flow-planner">
+      <div class="flow-line">
+        <div class="flow-dot"></div>
+        <div class="flow-stem"></div>
+      </div>
+      <div class="flow-content">
+        <div class="flow-content-title">意图描述</div>
+        <div class="flow-content-desc">"我要构建什么" —— 用自然语言描述产品愿景和核心假设</div>
+      </div>
+    </div>
+
+    <div class="flow-step flow-generator">
+      <div class="flow-line">
+        <div class="flow-dot"></div>
+        <div class="flow-stem"></div>
+      </div>
+      <div class="flow-content">
+        <div class="flow-content-title">Claude Code 生成 V1</div>
+        <div class="flow-content-desc">AI 在几小时内生成完整的第一版产品原型</div>
+      </div>
+    </div>
+
+    <div class="flow-loop-box">
+      <div class="flow-loop-label">快速迭代循环</div>
+
+      <div class="flow-step flow-evaluator">
+        <div class="flow-line">
+          <div class="flow-dot"></div>
+          <div class="flow-stem"></div>
+        </div>
+        <div class="flow-content">
+          <div class="flow-content-title">Antfooding 内部测试</div>
+          <div class="flow-content-desc">Anthropic 员工试用产品，发现问题和改进点</div>
+        </div>
+      </div>
+
+      <div class="flow-step flow-generator">
+        <div class="flow-line">
+          <div class="flow-dot"></div>
+          <div class="flow-stem"></div>
+        </div>
+        <div class="flow-content">
+          <div class="flow-content-title">推倒重写或迭代</div>
+          <div class="flow-content-desc">基于反馈决定是重写还是迭代优化</div>
+        </div>
+      </div>
+
+      <div class="flow-step flow-done">
+        <div class="flow-line">
+          <div class="flow-dot"></div>
+          <div class="flow-stem"></div>
+        </div>
+        <div class="flow-content">
+          <div class="flow-content-title">发布极简 V1</div>
+          <div class="flow-content-desc">以最简约的方式发布第一版公开产品</div>
+        </div>
+      </div>
+
+      <div class="flow-step flow-evaluator">
+        <div class="flow-line">
+          <div class="flow-dot"></div>
+          <div class="flow-stem"></div>
+        </div>
+        <div class="flow-content">
+          <div class="flow-content-title">真实世界用户反馈</div>
+          <div class="flow-content-desc">收集真实用户数据和体验反馈</div>
+        </div>
+      </div>
+
+      <div class="flow-step flow-generator">
+        <div class="flow-line">
+          <div class="flow-dot"></div>
+          <div class="flow-stem"></div>
+        </div>
+        <div class="flow-content">
+          <div class="flow-content-title">持续迭代</div>
+          <div class="flow-content-desc">基于真实反馈持续改进产品</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== Chapter 6 ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="ch6">
+  <div class="chapter-header">
+    <span class="chapter-num">06</span>
+    <h2 class="chapter-title">总结与启示</h2>
+  </div>
+
+  <p class="para">这场对话揭示了 AI 时代产品开发的六个核心观点：</p>
+
+  <ul class="step-list">
+    <li class="step-item">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <div class="step-content-title">效率不等于成功</div>
+        <div class="step-content-desc">AI 能让你快速构建任何东西，但无法告诉你应该构建什么。产品判断力比开发速度更重要。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <div class="step-content-title">温室里的树不够强壮</div>
+        <div class="step-content-desc">AI 生成的产品需要经历真实世界的磨练，才能长出坚实的根基。功能堆砌不等于产品价值。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <div class="step-content-title">重写的成本已经趋近于零</div>
+        <div class="step-content-desc">AI 时代的重写不再是拖垮公司的一年计划，而是几天的实验。这彻底改变了产品迭代的节奏。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <div class="step-content-title">更早发布，更早验证</div>
+        <div class="step-content-desc">不要假设在发布前就知道所有答案。Antfooding + 极简 V1 + 真实用户反馈，才是正确的循环。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">5</span>
+      <div class="step-content">
+        <div class="step-content-title">智能体原生是未来方向</div>
+        <div class="step-content-desc">软件需要从"预设路径"转向"灵活扩展"，让 AI 智能体能像用户一样使用所有功能。</div>
+      </div>
+    </li>
+    <li class="step-item">
+      <span class="step-num">6</span>
+      <div class="step-content">
+        <div class="step-content-title">Skills 系统是知识复用的关键</div>
+        <div class="step-content-desc">将最佳实践打包成可复用的技能，让 AI 在每次开发中都能应用积累的智慧。</div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Conclusion Block -->
+  <div class="conclusion-block">
+    <div class="conclusion-icon">&#128161;</div>
+    <div class="conclusion-title">AI 加速的是执行，而非判断</div>
+    <div class="conclusion-text">AI 时代最被低估的能力不是写代码的速度，而是知道什么该保留、什么该砍掉的判断力。正如 Mike Krieger 所说："一旦你知道要构建什么，实际的构建过程确实容易多了。"真正的产品能力，从来都不在于"能做多少"，而在于"该做多少"。</div>
+  </div>
+
+  <!-- Compare Table -->
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>传统开发</th>
+        <th>AI 时代开发</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>开发速度</td><td>数月到数年</td><td>几小时到几天</td></tr>
+      <tr><td>重写成本</td><td>极高（Netscape 教训）</td><td>极低（几天即可）</td></tr>
+      <tr><td>核心挑战</td><td>技术实现</td><td>产品判断力</td></tr>
+      <tr><td>测试方式</td><td>端到端逻辑测试</td><td>验证保真度</td></tr>
+      <tr><td>设计理念</td><td>护栏 + 预设路径</td><td>智能体原生 + 灵活扩展</td></tr>
+      <tr><td>发布节奏</td><td>完美再发布</td><td>极简 V1 + 快速迭代</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== Appendix ==================== -->
+<hr class="divider-accent">
+<section class="chapter" id="appendix">
+  <div class="chapter-header">
+    <span class="chapter-num" style="background:#7c4dff;">+</span>
+    <h2 class="chapter-title">附录：延伸阅读</h2>
+  </div>
+
+  <div class="appendix-card">
+    <div class="appendix-title"><span class="icon">&#128218;</span>推荐资源</div>
+    <ul class="appendix-list">
+      <li class="appendix-item">
+        <span class="appendix-item-num">1</span>
+        <div>
+          <div class="appendix-item-title">Every「AI &amp; I」播客 &mdash; "How Anthropic Uses Claude With Mike Krieger"</div>
+          <div class="appendix-item-desc">本视频来源，Dan Shipper 与 Mike Krieger 的完整对话</div>
+        </div>
+      </li>
+      <li class="appendix-item">
+        <span class="appendix-item-num">2</span>
+        <div>
+          <div class="appendix-item-title">盒饭财经《Anthropic 首席产品官万字分享: AI 时代的"现象级产品"为什么难产?》</div>
+          <div class="appendix-item-desc">对同一话题的中文深度解读，补充了更多背景分析</div>
+        </div>
+      </li>
+      <li class="appendix-item">
+        <span class="appendix-item-num">3</span>
+        <div>
+          <div class="appendix-item-title">Fred Brooks《人月神话》&mdash; 软件工程经典</div>
+          <div class="appendix-item-desc">理解"第二系统综合症"和"布鲁克斯法则"的必读经典</div>
+        </div>
+      </li>
+      <li class="appendix-item">
+        <span class="appendix-item-num">4</span>
+        <div>
+          <div class="appendix-item-title">Eric Ries《精益创业》&mdash; YAGNI 原则</div>
+          <div class="appendix-item-desc">"你不需要它"（You Aren't Gonna Need It）原则，与 Mike 的"砍功能"哲学一脉相承</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- Footer -->
+<div class="page-footer">
+  <p>本文基于 Every「AI &amp; I」播客内容整理 &mdash; 仅供学习参考</p>
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+  // === Elements ===
+  const progressBar = document.getElementById('progressBar');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarClose = document.getElementById('sidebarClose');
+  const sidebarProgressFill = document.getElementById('sidebarProgressFill');
+  const sidebarProgressPct = document.getElementById('sidebarProgressPct');
+
+  // === Progress Bar ===
+  function updateProgress() {
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    progressBar.style.width = pct + '%';
+    sidebarProgressFill.style.width = pct + '%';
+    sidebarProgressPct.textContent = Math.round(pct) + '%';
+  }
+
+  // === Sidebar Toggle ===
+  function openSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('show');
+    sidebarToggle.classList.add('shifted');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+    sidebarToggle.classList.remove('shifted');
+  }
+  sidebarToggle.addEventListener('click', function() {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  sidebarClose.addEventListener('click', closeSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSidebar();
+  });
+
+  // === Sidebar Chapter Toggle ===
+  const chapterLinks = document.querySelectorAll('.sidebar-chapter-link');
+  chapterLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      const group = this.closest('.sidebar-chapter-group');
+      const subList = group.querySelector('.sidebar-sub-list');
+      const wasExpanded = subList.classList.contains('expanded');
+      // Close all
+      document.querySelectorAll('.sidebar-sub-list').forEach(function(sl) { sl.classList.remove('expanded'); });
+      document.querySelectorAll('.sidebar-chapter-link').forEach(function(cl) { cl.classList.remove('active'); });
+      // Toggle current
+      if (!wasExpanded) {
+        subList.classList.add('expanded');
+        this.classList.add('active');
+      }
+      // Navigate
+      var target = this.getAttribute('data-target');
+      if (target) {
+        var el = document.getElementById(target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(closeSidebar, 300);
+      }
+    });
+  });
+
+  // === Sidebar Sub-link Navigation ===
+  document.querySelectorAll('.sidebar-sub-link').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var target = this.getAttribute('data-target');
+      if (target) {
+        var el = document.getElementById(target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(closeSidebar, 300);
+      }
+    });
+  });
+
+  // === TOC Card Navigation ===
+  document.querySelectorAll('.toc-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var target = this.getAttribute('data-target');
+      if (target) {
+        var el = document.getElementById(target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // === Scroll Tracking ===
+  var chapterIds = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'appendix'];
+  function updateActiveChapter() {
+    var scrollTop = window.scrollY + 120;
+    var currentChapter = chapterIds[0];
+    chapterIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollTop) currentChapter = id;
+    });
+    // Update sidebar highlight
+    document.querySelectorAll('.sidebar-chapter-group').forEach(function(group) {
+      var ch = group.getAttribute('data-chapter');
+      var link = group.querySelector('.sidebar-chapter-link');
+      var subList = group.querySelector('.sidebar-sub-list');
+      if (ch === currentChapter) {
+        link.classList.add('active');
+        if (subList) subList.classList.add('expanded');
+      } else {
+        link.classList.remove('active');
+        if (subList) subList.classList.remove('expanded');
+      }
+    });
+  }
+
+  // === IntersectionObserver for Chapter Animations ===
+  var chapters = document.querySelectorAll('.chapter');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.08 });
+  chapters.forEach(function(ch) { observer.observe(ch); });
+
+  // === Scroll Event ===
+  var ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      window.requestAnimationFrame(function() {
+        updateProgress();
+        updateActiveChapter();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  // Initial calls
+  updateProgress();
+  updateActiveChapter();
+})();
+</script>
+
+</body>
+</html>

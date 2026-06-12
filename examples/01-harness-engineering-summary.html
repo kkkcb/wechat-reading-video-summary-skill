@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness Engineering 到底是什么？</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #f6f1eb;
+    --bg-card: #fffcf8;
+    --bg-sidebar: #eee8df;
+    --text-primary: #2c2418;
+    --text-secondary: #6b5e4f;
+    --text-tertiary: #9e9182;
+    --accent: #c0793c;
+    --accent-light: rgba(192,121,60,0.12);
+    --accent-dark: #a8662e;
+    --border: #e4ddd3;
+    --border-light: #ede7de;
+    --tag-bg: #f0e8dc;
+    --highlight: #fff3e0;
+    --shadow-sm: 0 1px 3px rgba(44,36,24,0.06);
+    --shadow-md: 0 4px 12px rgba(44,36,24,0.08);
+    --radius: 6px;
+    --radius-lg: 10px;
+    --transition: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--text-tertiary);
+    border-radius: 3px;
+    opacity: 0.5;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  /* 顶部阅读进度条 */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #d4944f);
+    width: 0%;
+    z-index: 1000;
+    transition: width 0.15s ease-out;
+  }
+
+  /* 页面容器 */
+  .page-wrapper {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ====== 封面区域 ====== */
+  .cover-section {
+    padding: 80px 0 48px;
+    text-align: center;
+    position: relative;
+  }
+
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tag-bg);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  .cover-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .cover-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+
+  .cover-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 28px;
+  }
+
+  .cover-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .cover-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .cover-meta-item svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.6;
+  }
+
+  .cover-divider {
+    width: 40px;
+    height: 2px;
+    background: var(--accent);
+    margin: 32px auto 0;
+    border-radius: 1px;
+  }
+
+  /* ====== 目录导航 ====== */
+  .toc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin: 0 0 48px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .toc-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+
+  .toc-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 24px;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background var(--transition);
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .toc-item:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .toc-num {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 22px;
+    text-align: center;
+  }
+
+  /* ====== 正文区域 ====== */
+  .content-area {
+    padding-bottom: 100px;
+  }
+
+  /* 章节 */
+  .chapter {
+    margin-bottom: 56px;
+    animation: fadeUp 0.6s ease both;
+    scroll-margin-top: 20px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chapter-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .chapter-num {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-light);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chapter-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  /* 段落 */
+  .para {
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.9;
+    margin-bottom: 20px;
+    text-align: justify;
+  }
+
+  .para-label {
+    font-weight: 700;
+    color: var(--accent-dark);
+  }
+
+  /* 高亮引用块 */
+  .quote-block {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 20px 24px;
+    margin: 24px 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .quote-block p {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    margin: 0;
+  }
+
+  .quote-block .quote-source {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 10px;
+    font-style: normal;
+  }
+
+  /* 重点卡片 */
+  .highlight-card {
+    background: var(--highlight);
+    border: 1px solid #f0dcc0;
+    border-radius: var(--radius-lg);
+    padding: 22px 26px;
+    margin: 24px 0;
+  }
+
+  .highlight-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .highlight-card-title svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .highlight-card p {
+    font-size: 14.5px;
+    color: var(--text-primary);
+    line-height: 1.85;
+    margin: 0;
+  }
+
+  /* 表格 */
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 24px 0;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead {
+    background: var(--tag-bg);
+  }
+
+  th {
+    padding: 12px 18px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 18px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    line-height: 1.7;
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(192,121,60,0.04); }
+
+  /* 流程步骤 */
+  .step-list {
+    list-style: none;
+    margin: 20px 0;
+    padding: 0;
+  }
+
+  .step-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px 0;
+    position: relative;
+  }
+
+  .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 40px;
+    bottom: -4px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .step-content {
+    flex: 1;
+    padding-top: 4px;
+  }
+
+  .step-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .step-content p {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    line-height: 1.75;
+  }
+
+  /* 标签 */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--tag-bg);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin: 2px 3px;
+    letter-spacing: 0.2px;
+  }
+
+  /* 对比卡片 */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .compare-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .compare-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .compare-card-title.bad { color: #c0392b; }
+  .compare-card-title.good { color: #27ae60; }
+
+  .compare-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+
+  .compare-card .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13.5px;
+  }
+
+  .compare-card .metric:last-child { border-bottom: none; }
+  .compare-card .metric-label { color: var(--text-tertiary); }
+  .compare-card .metric-value { font-weight: 600; color: var(--text-primary); }
+
+  /* 底部结论 */
+  .conclusion-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-top: 40px;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+  }
+
+  .conclusion-block .icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .conclusion-block h3 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+  }
+
+  .conclusion-block p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* 页脚 */
+  .page-footer {
+    text-align: center;
+    padding: 40px 0 60px;
+    border-top: 1px solid var(--border-light);
+    margin-top: 20px;
+  }
+
+  .page-footer p {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.8;
+  }
+
+  /* 分割线 */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border-light);
+    margin: 36px 0;
+  }
+
+  .divider-accent {
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    margin: 36px auto;
+    border-radius: 1px;
+  }
+
+  /* 公式块 */
+  .formula-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    margin: 24px 0;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .formula {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+  }
+
+  .formula .op { color: var(--accent); margin: 0 6px; }
+  .formula .var { color: var(--accent-dark); font-style: italic; }
+
+  .formula-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 10px;
+  }
+
+  /* 时间线 */
+  .timeline {
+    position: relative;
+    margin: 24px 0;
+    padding-left: 28px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .timeline-item {
+    position: relative;
+    padding: 8px 0 20px;
+  }
+
+  .timeline-item:last-child { padding-bottom: 0; }
+
+  .timeline-dot {
+    position: absolute;
+    left: -25px;
+    top: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-primary);
+  }
+
+  .timeline-date {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+
+  .timeline-content {
+    font-size: 14.5px;
+    color: var(--text-primary);
+    line-height: 1.75;
+    margin-top: 4px;
+  }
+
+  .timeline-content span {
+    color: var(--text-tertiary);
+    font-size: 13.5px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 640px) {
+    .page-wrapper { padding: 0 18px; }
+    .cover-title { font-size: 24px; }
+    .chapter-title { font-size: 19px; }
+    .toc-list { grid-template-columns: 1fr; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .formula { font-size: 17px; }
+    .cover-meta { flex-direction: column; gap: 8px; }
+    .flow-node { min-width: 180px; padding: 10px 16px; }
+    .flow-arrow-label { display: none; }
+    .phase-title { font-size: 14px; }
+    .phase-body { padding: 16px; }
+  }
+
+  /* 流程图 */
+  .flow-diagram {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    margin: 24px 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .flow-title {
+    text-align: center;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  .flow-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .flow-node {
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 22px;
+    text-align: center;
+    min-width: 220px;
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+
+  .flow-node:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .flow-node-icon { font-size: 20px; margin-bottom: 4px; }
+
+  .flow-node-role {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+    margin-bottom: 3px;
+  }
+
+  .flow-node-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .flow-planner { border-color: #d4944f; background: #fdf6ee; }
+  .flow-generator { border-color: #5b8c5a; background: #f2f7f2; }
+  .flow-evaluator { border-color: #5a7fb8; background: #f0f4f9; }
+  .flow-done { border-color: #27ae60; background: #f0faf4; }
+
+  .flow-arrow {
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding: 4px 0;
+    text-align: center;
+    position: relative;
+  }
+
+  .flow-arrow-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    position: absolute;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-style: italic;
+  }
+
+  /* 流程图循环区域 */
+  .flow-loop-box {
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius-lg);
+    padding: 20px 16px 14px;
+    width: 100%;
+    max-width: 340px;
+    position: relative;
+    background: rgba(192,121,60,0.03);
+  }
+
+  .flow-loop-label {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .flow-loop-footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .flow-loop-check {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .flow-loop-yes, .flow-loop-no {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+
+  .flow-loop-yes {
+    color: #e67e22;
+    background: #fef5ec;
+  }
+
+  .flow-loop-no {
+    color: #27ae60;
+    background: #f0faf4;
+  }
+
+  /* 功能点时间线 */
+  .feature-timeline {
+    margin-top: 20px;
+    background: var(--bg-primary);
+    border-radius: var(--radius);
+    padding: 18px;
+    border: 1px solid var(--border-light);
+  }
+
+  .feature-timeline-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .feature-track {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .feature-status {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .feature-item.done .feature-status {
+    background: #e8f5e9;
+    color: #27ae60;
+    border: 2px solid #27ae60;
+  }
+
+  .feature-item.active .feature-status {
+    background: #fff3e0;
+    color: #e67e22;
+    border: 2px solid #e67e22;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230,126,34,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(230,126,34,0); }
+  }
+
+  .feature-item.pending .feature-status {
+    background: var(--bg-card);
+    color: var(--text-tertiary);
+    border: 2px dashed var(--border);
+  }
+
+  .feature-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .feature-label span {
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .feature-connector {
+    flex: 1;
+    min-width: 16px;
+    height: 2px;
+    background: #27ae60;
+    margin: 0 2px;
+    margin-bottom: 32px;
+  }
+
+  .feature-connector.pending {
+    background: var(--border);
+    border: none;
+  }
+
+  /* 阶段块 */
+  .phase-block {
+    border-left: 3px solid var(--accent);
+    margin: 24px 0;
+    padding: 0;
+    background: var(--bg-card);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 22px;
+    background: var(--tag-bg);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .phase-num {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .phase-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .phase-body {
+    padding: 20px 22px;
+  }
+
+  /* 循环步骤图 */
+  .loop-diagram {
+    background: var(--bg-primary);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin: 12px 0;
+    border: 1px dashed var(--border);
+  }
+
+  .loop-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .loop-step:not(:last-child) {
+    border-bottom: 1px dotted var(--border-light);
+  }
+
+  .loop-step-num {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .loop-step-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+  }
+
+  /* ====== 左侧边栏 ====== */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    z-index: 900;
+    transform: translateX(-280px);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 20px rgba(44,36,24,0);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(44,36,24,0.1);
+  }
+
+  .sidebar-header {
+    padding: 24px 22px 16px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+
+  .sidebar-header-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .sidebar-header-desc {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+
+  .sidebar-nav::-webkit-scrollbar { width: 4px; }
+  .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-chapter-group {
+    margin-bottom: 4px;
+  }
+
+  .sidebar-chapter-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 22px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+
+  .sidebar-chapter-link:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .sidebar-chapter-link.active {
+    color: var(--accent);
+    background: var(--accent-light);
+    border-left-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .sidebar-chapter-num {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: inherit;
+    opacity: 0.7;
+    min-width: 20px;
+  }
+
+  .sidebar-sub-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sidebar-sub-list.expanded {
+    max-height: 500px;
+  }
+
+  .sidebar-sub-link {
+    display: block;
+    padding: 7px 22px 7px 54px;
+    text-decoration: none;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .sidebar-sub-link::before {
+    content: '';
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border);
+    transform: translateY(-50%);
+    transition: background 0.2s ease;
+  }
+
+  .sidebar-sub-link:hover {
+    color: var(--accent);
+  }
+
+  .sidebar-sub-link:hover::before {
+    background: var(--accent);
+  }
+
+  .sidebar-sub-link.active {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .sidebar-sub-link.active::before {
+    background: var(--accent);
+    width: 6px;
+    height: 6px;
+  }
+
+  /* 附录卡片 */
+  .appendix-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.3s ease;
+  }
+  .appendix-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .appendix-card-source {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7c4dff;
+    background: #ede7f6;
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 14px;
+  }
+  .appendix-card-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .appendix-card-title a:hover {
+    color: var(--accent);
+  }
+  .appendix-card-meta {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .appendix-key-idea {
+    background: #f3e8ff;
+    border-left: 4px solid #7c4dff;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+  }
+  .appendix-key-idea-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7c4dff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .appendix-key-idea p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .appendix-section-title {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .appendix-takeaway {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .appendix-takeaway-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--tag-bg);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .appendix-takeaway-text {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+  }
+  .appendix-takeaway-text strong {
+    color: var(--text-primary);
+  }
+
+  /* 侧边栏切换按钮 */
+  .sidebar-toggle {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 950;
+    width: 32px;
+    height: 64px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sidebar-toggle:hover {
+    color: var(--accent);
+    width: 36px;
+    background: var(--tag-bg);
+  }
+
+  .sidebar-toggle svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sidebar.open ~ .sidebar-toggle {
+    left: 280px;
+  }
+
+  .sidebar.open ~ .sidebar-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  /* 侧边栏遮罩（移动端） */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(44,36,24,0.3);
+    z-index: 899;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 阅读进度指示（侧边栏内） */
+  .sidebar-progress {
+    padding: 16px 22px;
+    border-top: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+
+  .sidebar-progress-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .sidebar-progress-bar {
+    height: 3px;
+    background: var(--border-light);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .sidebar-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #d4944f);
+    width: 0%;
+    border-radius: 2px;
+    transition: width 0.15s ease-out;
+  }
+
+  /* 入场动画 */
+  .chapter { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .chapter.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .sidebar { width: 260px; transform: translateX(-260px); }
+    .sidebar.open ~ .sidebar-toggle { left: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- 左侧导航栏 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-header-title">📑 章节导航</div>
+    <div class="sidebar-header-desc">点击展开子标题，点击跳转阅读</div>
+  </div>
+  <nav class="sidebar-nav">
+    <!-- 第一章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch1">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">01</span>前置概念回顾
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch1')">Prompt Engineering</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch1')">Context Engineering</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch1')">三者递进关系</a></li>
+      </ul>
+    </div>
+    <!-- 第二章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch2">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">02</span>什么是 Harness Engineering
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch2')">Harness 的含义</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch2')">核心公式</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch2')">三维度对比表</a></li>
+      </ul>
+    </div>
+    <!-- 第三章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch3">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">03</span>OpenAI 的 Harness 实战
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch3')">100 万行代码实验</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch3')">上下文管理</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch3')">验证与反馈</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch3')">技术债清理</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch3')">Human Steer, Agents Execute</a></li>
+      </ul>
+    </div>
+    <!-- 第四章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch4">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">04</span>Anthropic 的 Harness 实战
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">任务规划 — 从失败中学习</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">质量评估 — 不能自己评自己</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">Full Harness 完整协作流程</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">阶段一：Planner 需求拆解</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">阶段二：交互标准协商</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">阶段三：代码实现</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">阶段四：质量评估与修复循环</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">阶段五：逐个功能点迭代</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">模型升级后的简化</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch4')">Solo vs Full Harness 对比</a></li>
+      </ul>
+    </div>
+    <!-- 第五章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch5">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">05</span>概念起源与传播
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch5')">Harness 词汇溯源</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch5')">Mitchell Hashimoto 首提</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch5')">OpenAI 引爆概念</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch5')">LangChain 定义公式</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch5')">Anthropic 教科书案例</a></li>
+      </ul>
+    </div>
+    <!-- 第六章 -->
+    <div class="sidebar-chapter-group" data-chapter="ch6">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">06</span>是噱头还是突破？
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch6')">反对者的两个攻击点</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch6')">模型越强 Harness 越少</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'ch6')">UP 主结论：不是噱头，但也不是终局</a></li>
+      </ul>
+    </div>
+    <!-- 附录 -->
+    <div class="sidebar-chapter-group" data-chapter="appendix">
+      <div class="sidebar-chapter-link" onclick="toggleSub(this)">
+        <span class="sidebar-chapter-num">📎</span>附录：延伸阅读
+      </div>
+      <ul class="sidebar-sub-list">
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'appendix')">OpenAI：智能体优先世界中的 Codex</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'appendix')">Anthropic：长时间运行 Agent 的有效 Harness</a></li>
+        <li><a class="sidebar-sub-link" onclick="navTo(this, 'appendix')">Anthropic：长时间应用开发的 Harness 设计</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="sidebar-progress">
+    <div class="sidebar-progress-label">
+      <span>阅读进度</span>
+      <span id="sidebarProgressPct">0%</span>
+    </div>
+    <div class="sidebar-progress-bar">
+      <div class="sidebar-progress-fill" id="sidebarProgressFill"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- 侧边栏遮罩 -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- 侧边栏切换按钮 -->
+<div class="sidebar-toggle" id="sidebarToggle" title="展开/收起目录">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+</div>
+
+<div class="page-wrapper">
+
+  <!-- ====== 封面 ====== -->
+  <section class="cover-section">
+    <div class="cover-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      视频文案总结
+    </div>
+    <h1 class="cover-title">Harness Engineering<br>到底是什么？</h1>
+    <p class="cover-subtitle">概念、实战与争议，一次全部讲清楚。继 Prompt Engineering、Context Engineering 之后，AI 圈的又一个新名词。</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        马克的技术工作坊
+      </div>
+      <div class="cover-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        约 37 分钟
+      </div>
+      <div class="cover-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        2026-05-05
+      </div>
+    </div>
+    <div class="cover-divider"></div>
+  </section>
+
+  <!-- ====== 目录 ====== -->
+  <nav class="toc-card">
+    <div class="toc-title">目 录</div>
+    <ul class="toc-list">
+      <li><a class="toc-item" href="#ch1"><span class="toc-num">01</span>前置概念回顾</a></li>
+      <li><a class="toc-item" href="#ch2"><span class="toc-num">02</span>什么是 Harness Engineering</a></li>
+      <li><a class="toc-item" href="#ch3"><span class="toc-num">03</span>OpenAI 的实战</a></li>
+      <li><a class="toc-item" href="#ch4"><span class="toc-num">04</span>Anthropic 的实战</a></li>
+      <li><a class="toc-item" href="#ch5"><span class="toc-num">05</span>概念起源与传播</a></li>
+      <li><a class="toc-item" href="#ch6"><span class="toc-num">06</span>是噱头还是突破？</a></li>
+    </ul>
+  </nav>
+
+  <!-- ====== 正文 ====== -->
+  <main class="content-area">
+
+    <!-- 第一章 -->
+    <section class="chapter" id="ch1">
+      <div class="chapter-header">
+        <div class="chapter-num">01</div>
+        <h2 class="chapter-title">前置概念回顾</h2>
+      </div>
+
+      <p class="para"><span class="para-label">Prompt Engineering（提示词工程）</span>研究的是如何把发给大模型的话说得更清楚、更准确。比如给橘猫起名，从模糊的"帮我给猫起个名"，优化为"帮我给橘色小猫起名，两个字，体现活泼爱闹的性格"。如今因模型能力增强，这门技术已很少被单独提起。</p>
+
+      <p class="para"><span class="para-label">Context Engineering（上下文工程）</span>研究的是如何管理大模型接收到的所有信息——包括 Prompt、对话历史、工具列表等。核心方法包括上下文压缩（对过长的对话历史做总结以防溢出）。但 Context Engineering 的效果有上限，于是引出了我们今天的主角。</p>
+
+      <div class="highlight-card">
+        <div class="highlight-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          三者关系是层层递进
+        </div>
+        <p>Prompt Engineering 研究怎么问问题 → Context Engineering 研究怎么给信息 → Harness Engineering 研究怎么搭建完整系统。研究范围不断向外扩展，关注的问题越来越大、越来越广。</p>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 第二章 -->
+    <section class="chapter" id="ch2">
+      <div class="chapter-header">
+        <div class="chapter-num">02</div>
+        <h2 class="chapter-title">什么是 Harness Engineering</h2>
+      </div>
+
+      <p class="para"><span class="para-label">Harness 的本意是"马具"</span>——套在马身上用来控制马的缰绳、头套等装备。类比到 AI：大模型就像一匹强大的马，如果不加以控制就会像脱缰野马一样产生幻觉、偏离方向。Harness 就是用来控制大模型的系统。</p>
+
+      <div class="formula-block">
+        <div class="formula"><span class="var">Harness</span> <span class="op">=</span> Agent <span class="op">-</span> Model</div>
+        <div class="formula-desc">一个完整的 Agent 减去大模型，剩下的所有东西都是 Harness</div>
+      </div>
+
+      <p class="para">以 Claude Code 为例：所有不属于 Claude 模型的部分都是 Harness——写在 CLAUDE.md 里面大模型要遵循的规则、Claude Code 可以使用的工具、定时调度机制等。</p>
+
+      <p class="para">顺理成章地，<span class="para-label">Harness Engineering 就是一门专门研究如何构建与设计 Harness 的技术</span>——除了大模型本身不研究，别的什么都研究。它不再是仅仅盯着模型输入的那点提示词或上下文，而是站在更高的系统层面上，研究怎么给大模型设计一套可以稳定运行的系统。</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>Prompt Engineering</th>
+              <th>Context Engineering</th>
+              <th>Harness Engineering</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>研究焦点</td>
+              <td>怎么问问题</td>
+              <td>怎么给信息</td>
+              <td>怎么搭建系统</td>
+            </tr>
+            <tr>
+              <td>作用范围</td>
+              <td>单次交互</td>
+              <td>单会话</td>
+              <td>系统级、全生命周期</td>
+            </tr>
+            <tr>
+              <td>一句话总结</td>
+              <td>教 AI 听懂一句话</td>
+              <td>给 AI 递对资料</td>
+              <td>给 AI 建一座工厂</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 第三章 -->
+    <section class="chapter" id="ch3">
+      <div class="chapter-header">
+        <div class="chapter-num">03</div>
+        <h2 class="chapter-title">OpenAI 的 Harness 实战</h2>
+      </div>
+
+      <p class="para">2025 年 8 月，OpenAI 内部启动了一个疯狂实验：用 AI 从零写一个真实的软件产品，全程不允许工程师手写一行代码。产品所有组成部分——逻辑、测试、CI配置、文档、内部工具——全部由 AI 生成。</p>
+
+      <div class="highlight-card">
+        <div class="highlight-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          实验成果
+        </div>
+        <p>5 个月，3→7 人团队，近 100 万行代码，线上真实用户的生产系统。开发效率约为纯人工的十倍。</p>
+      </div>
+
+      <p class="para">但实验一开始并不顺利——不是因为模型不够聪明，而是 <strong>Harness 没有搭好</strong>。Agent 经常走偏方向、重复犯错。于是他们做了大量优化，可分为三大类：</p>
+
+      <div class="phase-block" style="border-left-color: #5a7fb8;">
+        <div class="phase-header" style="background: #f0f4f9;">
+          <div class="phase-num" style="background: #dce6f2; color: #5a7fb8;">①</div>
+          <div class="phase-title">上下文管理</div>
+        </div>
+        <div class="phase-body">
+          <p class="para" style="margin-bottom:12px;">最初把所有规范塞进一个超大 AGENTS.md 文件，但发现两个问题：</p>
+
+          <div class="compare-grid">
+            <div class="compare-card">
+              <div class="compare-card-title bad">✕ 大而全的方案</div>
+              <p>内容太多导致模型效果变差，就像新人报到被砸了一本巨厚员工手册，完全不知道重点在哪。</p>
+              <p style="margin-top:8px;">文件逐步腐化，时间一长变成一堆过时的垃圾，连人都懒得整理。</p>
+            </div>
+            <div class="compare-card">
+              <div class="compare-card-title good">✓ 改进后的方案</div>
+              <p>AGENTS.md 压缩到约 100 行（只做索引），相关文档放在对应目录下，按需加载。</p>
+              <p style="margin-top:8px;">强制要求所有重要决策搬进代码仓库，让<strong>仓库成为唯一的事实来源</strong>。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-block" style="border-left-color: #5b8c5a;">
+        <div class="phase-header" style="background: #f2f7f2;">
+          <div class="phase-num" style="background: #dcefdc; color: #5b8c5a;">②</div>
+          <div class="phase-title">验证与反馈</div>
+        </div>
+        <div class="phase-body">
+          <ul class="step-list">
+            <li class="step-item">
+              <div class="step-dot">1</div>
+              <div class="step-content">
+                <strong>UI 自动验证</strong>
+                <p>给 Codex 配上 Chrome DevTools，使其可以自己截图、查看 DOM 结构、模拟用户操作来验证 UI 是否符合要求。</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-dot">2</div>
+              <div class="step-content">
+                <strong>可观测性工具链</strong>
+                <p>接入完整的日志、指标和运行链路追踪，每个任务跑在完全隔离的环境里。</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-dot">3</div>
+              <div class="step-content">
+                <strong>架构规范自动闭环</strong>
+                <p>使用 Linter 和测试保证分层架构（Types → Config → Repo → Service → Runtime → UI，严格单向依赖）。Agent 写代码 → Linter 检测 → 报错反馈 → Agent 修改 → 再检测，直到全部通过。</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase-block" style="border-left-color: #d4944f;">
+        <div class="phase-header" style="background: #fdf6ee;">
+          <div class="phase-num" style="background: #f5e6d0; color: #d4944f;">③</div>
+          <div class="phase-title">技术债清理</div>
+        </div>
+        <div class="phase-body">
+          <p class="para">设置后台 Codex 任务定期扫描代码库，找出偏离规范的地方自动修改提交；同样设置后台任务定期扫描文档库，找出过时文档自动修复。无论是代码还是文档，OpenAI 都有对应的维护方案，不会放任自流。</p>
+        </div>
+      </div>
+
+      <div class="quote-block">
+        <p>"Human Steer, Agents Execute"——人类负责掌舵（定方向、给上下文、制定规则），Agent 负责干活。软件工程师的核心职责从写代码，变成了为 Agent 搭建稳定可靠的系统与支撑框架。</p>
+        <div class="quote-source">—— OpenAI 官方文章核心理念</div>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 第四章 -->
+    <section class="chapter" id="ch4">
+      <div class="chapter-header">
+        <div class="chapter-num">04</div>
+        <h2 class="chapter-title">Anthropic 的 Harness 实战</h2>
+      </div>
+
+      <p class="para">Anthropic 发表了两篇核心文章，总结下来最关键的两点是：<span class="para-label">任务规划</span>和<span class="para-label">质量评估</span>。</p>
+
+      <h3 style="font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; margin:28px 0 14px; color:var(--text-primary);">① 任务规划——从失败中学习</h3>
+
+      <p class="para">让 Agent 直接克隆 Claude.ai（一个功能丰富的聊天界面），Agent 急于求成，一口气想做完全部功能，结果干到一半上下文满了就丢下烂摊子。下一个 Agent 接手时完全不知道前面发生了什么，只能靠猜，有些功能做了一半却被宣布完工。</p>
+
+      <p class="para"><strong>解法：</strong>引入 Initializer Agent 拆解用户需求为详细功能列表，干活 Agent 逐个功能点稳扎稳打、做完一个标记一个。第二篇文章进一步优化，把需求拆解单独做成 <span class="tag">Planner Agent</span>。</p>
+
+      <h3 style="font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; margin:28px 0 14px; color:var(--text-primary);">② 质量评估——不能自己评自己</h3>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <div class="compare-card-title bad">✕ 方案一：人工评估</div>
+          <p>效率太低，都 AI 时代了，能交给 AI 的都交给 AI。</p>
+        </div>
+        <div class="compare-card">
+          <div class="compare-card-title bad">✕ 方案二：Agent 自评</div>
+          <p>"王婆卖瓜自卖自夸"，Agent 对自己做的产品天然有滤镜，即使有明显的 Bug 也会视而不见、给自己打高分。</p>
+        </div>
+      </div>
+
+      <div class="highlight-card" style="margin-top: -8px;">
+        <div class="highlight-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          最终方案：独立 Evaluator Agent
+        </div>
+        <p>做一个专门的质量评估 Agent，作为独立第三方来评估产出质量。把生成代码和质量评估拆开，分别交给两个不同的 Agent。</p>
+      </div>
+
+      <h3 style="font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; margin:28px 0 14px; color:var(--text-primary);">经典三 Agent 架构（Full Harness 方案）详细实现</h3>
+
+      <p class="para">Anthropic 把这个包含三个 Agent 的方案叫做 <strong>Full Harness 方案</strong>。相比之下，只靠一个 Generator 独立完成所有需求的传统单 Agent 模式被称为 <strong>Solo 方案</strong>。下面是 Full Harness 方案的完整实现流程。</p>
+
+      <!-- 完整流程图 -->
+      <div class="flow-diagram">
+        <div class="flow-title">Full Harness 完整协作流程图</div>
+        <div class="flow-container">
+          <!-- 用户需求 -->
+          <div class="flow-node flow-user">
+            <div class="flow-node-icon">👤</div>
+            <div class="flow-node-label">用户需求</div>
+          </div>
+          <div class="flow-arrow">▼</div>
+
+          <!-- Planner -->
+          <div class="flow-node flow-planner">
+            <div class="flow-node-role">Planner Agent</div>
+            <div class="flow-node-label">拆解需求为功能列表</div>
+          </div>
+          <div class="flow-arrow">▼<div class="flow-arrow-label">功能列表</div></div>
+
+          <!-- 功能点循环区 -->
+          <div class="flow-loop-box">
+            <div class="flow-loop-label">⟳ 逐个功能点循环（阶段二～五）</div>
+
+            <div class="flow-node flow-generator" style="margin-bottom:8px;">
+              <div class="flow-node-role">Generator Agent</div>
+              <div class="flow-node-label">① 挑选功能点，协商交互标准</div>
+            </div>
+
+            <div class="flow-arrow" style="padding:2px 0;">↕ 协商 & 反馈</div>
+
+            <div class="flow-node flow-evaluator" style="margin-top:0;">
+              <div class="flow-node-role">Evaluator Agent</div>
+              <div class="flow-node-label">② 评估交互标准 + 评估实现结果</div>
+            </div>
+
+            <div class="flow-node flow-generator" style="margin-top:10px;">
+              <div class="flow-node-role">Generator Agent</div>
+              <div class="flow-node-label">③ 编写代码实现该功能点</div>
+            </div>
+
+            <div class="flow-arrow" style="padding:2px 0;">▼<div class="flow-arrow-label">实现结果</div></div>
+
+            <div class="flow-node flow-evaluator" style="margin-top:0;">
+              <div class="flow-node-role">Evaluator Agent</div>
+              <div class="flow-node-label">④ 质量评估：通过 → 标记完成 / 不通过 → 返工</div>
+            </div>
+
+            <div class="flow-loop-footer">
+              <div class="flow-loop-check">功能列表还有未完成项？</div>
+              <div class="flow-loop-yes">是 → 回到顶部，挑选下一个功能点</div>
+              <div class="flow-loop-no">否 → 全部完成，进入交付</div>
+            </div>
+          </div>
+
+          <div class="flow-arrow">▼</div>
+
+          <!-- 成品 -->
+          <div class="flow-node flow-done">
+            <div class="flow-node-icon">✅</div>
+            <div class="flow-node-label">最终交付</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段一 -->
+      <div class="phase-block">
+        <div class="phase-header">
+          <div class="phase-num">阶段一</div>
+          <div class="phase-title">Planner — 需求拆解（仅执行一次）</div>
+        </div>
+        <div class="phase-body">
+          <p class="para" style="margin-bottom:12px;">用户提出一句模糊的需求（如"帮我做一个游戏制作工具"），Planner Agent 负责把这句模糊的需求<strong>扩展成一份完整、清晰的功能列表</strong>。</p>
+          <div class="highlight-card">
+            <div class="highlight-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              关键设计
+            </div>
+            <p>在第一篇文章中，这个角色叫 <strong>Initializer Agent</strong>（负责初始化环境、拆解需求、编写启动脚本、添加进度文件）。第二篇文章把其中最核心的"拆解需求"单独拎出来，做成了独立的 <strong>Planner Agent</strong>。后续 Generator 拿着功能列表直接干活就行，不用再对着用户需求猜了。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段二 -->
+      <div class="phase-block">
+        <div class="phase-header">
+          <div class="phase-num">阶段二</div>
+          <div class="phase-title">Generator + Evaluator — 交互标准协商</div>
+        </div>
+        <div class="phase-body">
+          <p class="para" style="margin-bottom:12px;">Generator 从功能列表中<strong>挑选一个功能点</strong>，但不会立刻动手写代码。它先跟 Evaluator 讨论这个功能点的<strong>交互标准</strong>——到底做到什么程度才算完成。</p>
+
+          <div class="loop-diagram">
+            <div class="loop-step">
+              <div class="loop-step-num">1</div>
+              <div class="loop-step-text"><strong>Generator 提出方案：</strong>把对这个功能点的实现想法发给 Evaluator</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">2</div>
+              <div class="loop-step-text"><strong>Evaluator 提出修改意见：</strong>可能对提议有补充或纠正</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">3</div>
+              <div class="loop-step-text"><strong>Generator 根据意见修改：</strong>再次提交新的交互标准</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">⟳</div>
+              <div class="loop-step-text"><strong>循环直到 Evaluator 确认：</strong>重复以上过程，直到 Evaluator 认为标准没有问题为止</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段三 -->
+      <div class="phase-block">
+        <div class="phase-header">
+          <div class="phase-num">阶段三</div>
+          <div class="phase-title">Generator — 代码实现</div>
+        </div>
+        <div class="phase-body">
+          <p class="para">交互标准确认好之后，Generator 开始编写代码来实现这个功能点。实现完毕后，Generator 把实现结果<strong>提交给 Evaluator</strong>。</p>
+        </div>
+      </div>
+
+      <!-- 阶段四 -->
+      <div class="phase-block">
+        <div class="phase-header">
+          <div class="phase-num">阶段四</div>
+          <div class="phase-title">Evaluator — 质量评估与修复循环</div>
+        </div>
+        <div class="phase-body">
+          <p class="para" style="margin-bottom:12px;">Evaluator 对 Generator 的实现结果做出评估反馈。这是整个方案中最重要的质量关卡。</p>
+
+          <div class="loop-diagram">
+            <div class="loop-step">
+              <div class="loop-step-num">1</div>
+              <div class="loop-step-text"><strong>Evaluator 评估：</strong>独立审查代码实现，判断是否达到交互标准</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">2</div>
+              <div class="loop-step-text"><strong>如果不通过：</strong>把问题列表反馈给 Generator</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">3</div>
+              <div class="loop-step-text"><strong>Generator 修改代码：</strong>根据反馈做相应修改</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">4</div>
+              <div class="loop-step-text"><strong>再次提交评估：</strong>修改后重新提交给 Evaluator</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num">⟳</div>
+              <div class="loop-step-text"><strong>循环直到通过：</strong>重复直到 Evaluator 评估通过为止</div>
+            </div>
+          </div>
+
+          <div class="highlight-card">
+            <div class="highlight-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              为什么不能自评？
+            </div>
+            <p>Agent 自评就是"王婆卖瓜自卖自夸"，天然有滤镜，即使有明显的 Bug 也能视而不见给自己打高分。独立 Evaluator 作为第三方没有理由去袒护别人的产出，评估结果自然客观得多。而且把 Evaluator 单独拎出来，还可以单独优化和训练它的评估能力。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段五 -->
+      <div class="phase-block" style="border-left-color: #e67e22;">
+        <div class="phase-header" style="background: #fef5ec;">
+          <div class="phase-num" style="background: #fce4c8; color: #e67e22;">阶段五</div>
+          <div class="phase-title">检查功能列表 — 循环往复，逐个击破</div>
+        </div>
+        <div class="phase-body">
+          <p class="para" style="margin-bottom:14px;">一个功能点评估通过后，并不意味着结束。Generator 需要回到功能列表，检查是否还有未完成的功能点。整个阶段二到阶段四会<strong>循环往复</strong>，直到所有功能点全部开发完毕。</p>
+
+          <div class="loop-diagram" style="border-color: #e67e22; background: #fffcf8;">
+            <div class="loop-step">
+              <div class="loop-step-num" style="color:#e67e22; background:#fce4c8;">✓</div>
+              <div class="loop-step-text"><strong>功能点 N 评估通过</strong> — Evaluator 确认当前功能点质量达标</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num" style="color:#e67e22; background:#fce4c8;">↓</div>
+              <div class="loop-step-text"><strong>标记完成</strong> — 在功能列表中将该功能点标记为已完成</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num" style="color:#e67e22; background:#fce4c8;">?</div>
+              <div class="loop-step-text"><strong>检查功能列表</strong> — 功能列表中是否还有未完成的功能点？</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num" style="color:#e67e22; background:#fce4c8;">→</div>
+              <div class="loop-step-text"><strong>是 → 回到阶段二</strong> — Generator 从列表中挑选下一个功能点，重新走协商标准 → 写代码 → 评估修复的完整流程</div>
+            </div>
+            <div class="loop-step">
+              <div class="loop-step-num" style="color:#27ae60; background:#e8f5e9;">✅</div>
+              <div class="loop-step-text"><strong>否 → 全部完成</strong> — 所有功能点均已通过评估，可以交付最终产品</div>
+            </div>
+          </div>
+
+          <p class="para" style="margin-top:14px;">Anthropic 在提示词里<strong>强制 Generator 每次只执行一个功能点</strong>，做完一个标记一个再做下一个，否则 Agent 会急于求成一口气做所有功能，结果上下文满了就丢下烂摊子。</p>
+
+          <!-- 多功能点循环示意 -->
+          <div class="feature-timeline">
+            <div class="feature-timeline-title">多功能点循环推进示意</div>
+            <div class="feature-track">
+              <div class="feature-item done">
+                <div class="feature-status">✓</div>
+                <div class="feature-label">功能点 1<br><span>协商 → 实现 → 评估通过</span></div>
+              </div>
+              <div class="feature-connector"></div>
+              <div class="feature-item done">
+                <div class="feature-status">✓</div>
+                <div class="feature-label">功能点 2<br><span>协商 → 实现 → 评估通过</span></div>
+              </div>
+              <div class="feature-connector"></div>
+              <div class="feature-item done">
+                <div class="feature-status">✓</div>
+                <div class="feature-label">功能点 3<br><span>协商 → 实现 → 返工 → 通过</span></div>
+              </div>
+              <div class="feature-connector"></div>
+              <div class="feature-item active">
+                <div class="feature-status">⟳</div>
+                <div class="feature-label">功能点 4<br><span>正在实现中…</span></div>
+              </div>
+              <div class="feature-connector pending"></div>
+              <div class="feature-item pending">
+                <div class="feature-status">○</div>
+                <div class="feature-label">功能点 5<br><span>待开始</span></div>
+              </div>
+              <div class="feature-connector pending"></div>
+              <div class="feature-item pending">
+                <div class="feature-status">○</div>
+                <div class="feature-label">功能点 N<br><span>待开始</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演进 -->
+      <div class="phase-block" style="border-left-color: #27ae60;">
+        <div class="phase-header">
+          <div class="phase-num" style="background: #e8f5e9; color: #27ae60;">演进</div>
+          <div class="phase-title">模型升级后的简化</div>
+        </div>
+        <div class="phase-body">
+          <p class="para">在升级到 <strong>Opus 4.6</strong> 后，Generator 的全局统筹能力够强了，可以一次把所有功能点都拿过来自己决定先做哪个再做哪个，稳步推进，不再需要别人对执行流程指指点点。Evaluator 也直接评估最终产出即可，不需要再分功能点评估。Anthropic 后面就把"逐个功能点执行"的强制约束去掉了，简化为 Generator 自主统筹 + Evaluator 最终把关的流程。</p>
+        </div>
+      </div>
+
+      <h3 style="font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; margin:36px 0 14px; color:var(--text-primary);">效果对比</h3>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <div class="compare-card-title bad">Solo 方案（单 Agent）</div>
+          <div class="metric"><span class="metric-label">架构</span><span class="metric-value">单个 Generator 独立完成</span></div>
+          <div class="metric"><span class="metric-label">耗时</span><span class="metric-value">20 分钟</span></div>
+          <div class="metric"><span class="metric-label">花费</span><span class="metric-value">$9</span></div>
+          <div class="metric"><span class="metric-label">质量</span><span class="metric-value" style="color:#c0392b;">布局不合理、产品逻辑难理解、Bug 到处都是，基本没法用</span></div>
+        </div>
+        <div class="compare-card">
+          <div class="compare-card-title good">Full Harness 方案（三 Agent）</div>
+          <div class="metric"><span class="metric-label">架构</span><span class="metric-value">Planner + Generator + Evaluator</span></div>
+          <div class="metric"><span class="metric-label">耗时</span><span class="metric-value">6 小时</span></div>
+          <div class="metric"><span class="metric-label">花费</span><span class="metric-value">$200</span></div>
+          <div class="metric"><span class="metric-label">质量</span><span class="metric-value" style="color:#27ae60;">布局和产品逻辑达到可用水准</span></div>
+        </div>
+      </div>
+
+      <p class="para">考60分可能只需要复习3天，但想考90分可能就得复习一个月。精确输出是有代价的，对 AI 和人类都一样。</p>
+
+      <div class="quote-block">
+        <p>升级到 Opus 4.6 后，Generator 变强了，不再需要强制逐个功能点执行，可以一次拿所有功能点自己统筹安排。<strong>模型越强，需要的 Harness 越少。</strong></p>
+        <div class="quote-source">—— Anthropic 实验发现</div>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 第五章 -->
+    <section class="chapter" id="ch5">
+      <div class="chapter-header">
+        <div class="chapter-num">05</div>
+        <h2 class="chapter-title">概念起源与传播</h2>
+      </div>
+
+      <p class="para">Harness 这个词并不算新词。传统软件测试领域就有 Test Harness（支持测试代码运行的框架），AI 领域也有 LM Evaluation Harness。大家一直在默默用，谁也没觉得需要大吹特吹。</p>
+
+      <p class="para"><strong>重点是 Harness Engineering 这个组合词。</strong>目前比较公认的传播时间线如下：</p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">2026-02-05</div>
+          <div class="timeline-content">
+            Mitchell Hashimoto（HashiCorp 联合创始人）发表文章 <strong>"My AI Adoption Journey"</strong>，首次提出 Harness Engineering 一词。核心理念：Agent 犯了错就去改造系统，让它绝不再犯同样的错。原文说"也不知道业界有没有公认的叫法，我就姑且叫它 Harness Engineering，有更好的词随时改口"。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">2026-02-11</div>
+          <div class="timeline-content">
+            <strong>OpenAI 发表 Harness Engineering 文章</strong>，信息量极大，迅速在业界引发巨大反响。<span>真正引爆了这个概念。</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">2026-02-17</div>
+          <div class="timeline-content">
+            <strong>Martin Fowler 网站发文</strong> "Harness Engineering: First Thoughts"，作者指出 OpenAI 文章正文其实只用了一次 Harness 这个词，推测可能是受到 Mitchell Hashimoto 启发后临时放到标题里。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">2026-03-10</div>
+          <div class="timeline-content">
+            <strong>LangChain 发文</strong> "The Anatomy of the Agent's Harness"，第一次明确给出公式：<strong>Agent = Model + Harness</strong>。公式一出，概念就算定下来了。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">2026-03-24</div>
+          <div class="timeline-content">
+            <strong>Anthropic 发文</strong>，拿出 Planner + Generator + Evaluator 经典架构。虽然自己只用 Harness 名词、没有套用 Harness Engineering 这个新词，但整个 AI 圈心照不宣，直接把这套架构当成了 Harness Engineering 的教科书级案例。
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          微妙的事实
+        </div>
+        <p>Harness Engineering 里面用到的所有技术——Linter 代码检查、任务拆解、质量评估机制——竟然没有一个是从未有过的新技术。它提供的是一套新的<strong>系统思维架构</strong>，而不是发明了一批颠覆性的新技术。</p>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 第六章 -->
+    <section class="chapter" id="ch6">
+      <div class="chapter-header">
+        <div class="chapter-num">06</div>
+        <h2 class="chapter-title">是噱头还是突破？</h2>
+      </div>
+
+      <p class="para">反对者的攻击点主要有两个：</p>
+
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-dot">1</div>
+          <div class="step-content">
+            <strong>没有新技术，全是新瓶装旧酒</strong>
+            <p>Linter、任务拆解、质量评估早就有了，特意造个新词到处宣传，这不就是噱头吗？</p>
+          </div>
+        </li>
+        <li class="step-item">
+          <div class="step-dot">2</div>
+          <div class="step-content">
+            <strong>所有 Harness 迟早会被淘汰</strong>
+            <p>随着模型能力增强，今天的 Harness 设计可能会被模型自身逐步吸收，最终变得不再需要。</p>
+          </div>
+        </li>
+      </ul>
+
+      <p class="para">而且这种担忧连 Anthropic 自己的文章里都有迹象——从 Sonnet 4.5 升级到 Opus 4.6 后，上下文焦虑被大幅缓解，不再需要上下文重置；强制逐个功能点执行的机制也不再需要了。</p>
+
+      <div class="conclusion-block">
+        <div class="icon">🎯</div>
+        <h3>UP 主观点：不是噱头，但也不是终局</h3>
+        <p style="margin-bottom:16px;"><strong>不是噱头</strong>——OpenAI 和 Anthropic 都通过它把 Agent 的稳定性、自动化程度往前推了一大步。工程领域的真正进步往往不在于发明新技术，而在于有统一的框架把零散能力组织起来。</p>
+        <p><strong>不是终局</strong>——随着模型能力继续增强，今天用来约束、纠正模型的系统设计可能会被模型自身逐步吸收。未来可能只需配置最基础的 Harness，模型就能自己搞定 99% 的问题。</p>
+      </div>
+
+      <div class="quote-block" style="margin-top: 32px;">
+        <p>Harness Engineering 是一个过渡期的关键技术。它可能不是未来的终局答案，但它是当下最现实的答案。在模型依然会犯错、产生幻觉、偏离轨道的今天，谁能把 Harness 搭得更稳，谁就能更早地把 AI 能力转化为真正的生产力。</p>
+        <div class="quote-source">—— 马克的技术工作坊</div>
+      </div>
+    </section>
+
+    <div class="divider-accent"></div>
+
+    <!-- 附录 -->
+    <section class="chapter" id="appendix">
+      <div class="chapter-header">
+        <div class="chapter-num" style="background:#ede7f6; color:#7c4dff;">📎</div>
+        <h2 class="chapter-title">附录：延伸阅读</h2>
+      </div>
+
+      <p class="para" style="margin-bottom:28px;">以下三篇文章是本文视频内容的核心参考来源，分别来自 OpenAI 和 Anthropic 的官方工程博客。每篇文章下方附有简要讲解，帮助你快速了解其核心要点。</p>
+
+      <!-- 文章一：OpenAI -->
+      <div class="appendix-card">
+        <div class="appendix-card-source">OpenAI Engineering</div>
+        <h3 class="appendix-card-title">
+          <a href="https://openai.com/zh-Hans-CN/index/harness-engineering/" target="_blank" style="color:inherit; text-decoration:none;">工程技术：在智能体优先的世界中利用 Codex</a>
+        </h3>
+        <div class="appendix-card-meta">作者：Ryan Lopopolo · 2026 年 2 月 11 日</div>
+
+        <div class="appendix-card-body">
+          <div class="appendix-key-idea">
+            <div class="appendix-key-idea-label">核心思想</div>
+            <p>OpenAI 用 5 个月时间，让 3 名工程师借助 Codex 智能体构建了一款约 <strong>100 万行代码</strong>的产品，并且<strong>没有一行代码是人工编写的</strong>。人类不再写代码，而是专注于设计环境、明确意图、构建反馈回路。</p>
+          </div>
+
+          <h4 class="appendix-section-title">简要讲解</h4>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">1</div>
+            <div class="appendix-takeaway-text">
+              <strong>人类掌舵，智能体执行。</strong>工程师的工作重心从写代码转向了系统设计、架构决策和杠杆效应。当 Agent 遇到困难时，解决方案不是"再努力一点"，而是追问"还需要给它什么能力和约束"。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">2</div>
+            <div class="appendix-takeaway-text">
+              <strong>给地图，别给说明书。</strong>OpenAI 最初尝试写一个巨大的 AGENTS.md，结果发现信息太多反而有害——Agent 无法判断哪些信息仍然有效，哪些已经过时。最终方案是：AGENTS.md 只做"目录"，约 100 行，真正的知识库放在结构化的 docs/ 目录中，实现<strong>渐进式披露</strong>。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">3</div>
+            <div class="appendix-takeaway-text">
+              <strong>强制执行不变量，而非微观管理。</strong>每个业务域严格分层（Types → Config → Repo → Service → Runtime → UI），依赖方向通过自定义 linter 机械地强制执行。Agent 在边界内拥有很大自由度，但越界行为会被立即拦截。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">4</div>
+            <div class="appendix-takeaway-text">
+              <strong>技术债就像高息贷款。</strong>完全自主的 Agent 会复制代码库中已有的模式，包括不理想的模式。OpenAI 建立了"黄金原则"和循环清理流程，定期让 Agent 扫描偏差并发起重构 PR——类似垃圾回收机制，小额持续偿还远胜于积压后一次性处理。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">5</div>
+            <div class="appendix-takeaway-text">
+              <strong>让 Agent 能直接看到应用。</strong>为了让 Codex 做 QA，OpenAI 接入了 Chrome DevTools 协议，让 Agent 能截图、操作 DOM、复现 Bug、验证修复。单次运行可持续工作超过 6 小时。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文章二：Anthropic 第一篇 -->
+      <div class="appendix-card">
+        <div class="appendix-card-source">Anthropic Engineering</div>
+        <h3 class="appendix-card-title">
+          <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents" target="_blank" style="color:inherit; text-decoration:none;">Effective Harnesses for Long-Running Agents</a>
+        </h3>
+        <div class="appendix-card-meta">作者：Justin Young · 2025 年 11 月 26 日</div>
+
+        <div class="appendix-card-body">
+          <div class="appendix-key-idea">
+            <div class="appendix-key-idea-label">核心思想</div>
+            <p>长时间运行的 Agent 面临的核心挑战是：每次新会话都从零开始，没有上一次的记忆。就像轮班制的工程师，每一班新来的人都不知道上一班做了什么。Anthropic 提出了<strong>Initializer Agent + Coding Agent</strong> 的两阶段方案来解决这个问题。</p>
+          </div>
+
+          <h4 class="appendix-section-title">简要讲解</h4>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">1</div>
+            <div class="appendix-takeaway-text">
+              <strong>Agent 的两种失败模式。</strong>第一种：试图一次性完成所有工作（one-shot），结果上下文耗尽，留下一半实现的烂摊子。第二种：做了几个功能后，环顾四周觉得"差不多了"，提前宣布完工。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">2</div>
+            <div class="appendix-takeaway-text">
+              <strong>Initializer Agent 做初始化。</strong>首次运行时，专门初始化环境：创建功能列表文件（feature_list.json，含 200+ 个功能点，全部标记为"failing"）、进度文件（claude-progress.txt）、启动脚本（init.sh）和初始 git commit。为后续所有 Coding Agent 提供清晰的工作地图。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">3</div>
+            <div class="appendix-takeaway-text">
+              <strong>Coding Agent 逐个功能推进。</strong>每次只做一个功能点。会话开始时先运行 init.sh 启动开发服务器，用 Puppeteer 做基本验证确保没有基础 Bug，然后从功能列表中挑选最高优先级的未完成功能来实现。做完后写 git commit 和进度更新。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">4</div>
+            <div class="appendix-takeaway-text">
+              <strong>用 JSON 而非 Markdown 存储功能列表。</strong>实验发现 Agent 更容易随意修改或覆盖 Markdown 文件，而 JSON 格式更结构化，模型更不容易误操作。配合"严禁删除或编辑测试"的强措辞指令，确保功能列表不被篡改。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">5</div>
+            <div class="appendix-takeaway-text">
+              <strong>必须用浏览器做端到端测试。</strong>Claude 倾向于用单元测试或 curl 命令验证功能，但经常忽略端到端的实际体验。给它 Puppeteer MCP 让它像人类一样操作浏览器后，性能显著提升——能发现从代码层面看不出来的 Bug。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文章三：Anthropic 第二篇 -->
+      <div class="appendix-card">
+        <div class="appendix-card-source">Anthropic Engineering</div>
+        <h3 class="appendix-card-title">
+          <a href="https://www.anthropic.com/engineering/harness-design-long-running-apps" target="_blank" style="color:inherit; text-decoration:none;">Harness Design for Long-Running Application Development</a>
+        </h3>
+        <div class="appendix-card-meta">作者：Prithvi Rajasekaran · 2026 年 3 月 24 日</div>
+
+        <div class="appendix-card-body">
+          <div class="appendix-key-idea">
+            <div class="appendix-key-idea-label">核心思想</div>
+            <p>受 GAN（生成对抗网络）启发，Anthropic 设计了<strong>Planner + Generator + Evaluator 三 Agent 架构</strong>。关键创新：让评估者独立于生成者，解决了 Agent 自评时"王婆卖瓜"的问题。这也是视频重点讲解的 Full Harness 方案。</p>
+          </div>
+
+          <h4 class="appendix-section-title">简要讲解</h4>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">1</div>
+            <div class="appendix-takeaway-text">
+              <strong>为什么自评不行？</strong>Agent 给自己打分时，会不自觉地给出高分——即使人类一眼就能看出质量平庸。尤其在主观任务（如设计）上，不存在二元的"通过/不通过"判定，Agent 倾向于对 LLM 生成的作品格外宽容。解决方案：把"干活的人"和"验收的人"分开。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">2</div>
+            <div class="appendix-takeaway-text">
+              <strong>把主观审美变成可评分的维度。</strong>Anthropic 定义了四个评估维度：<em>设计质量</em>（整体感）、<em>原创性</em>（非模板化）、<em>工艺</em>（排版/间距/对比度）、<em>功能性</em>（可用性）。重点加权重在前两个维度，因为后两个 Agent 本身就能做好。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">3</div>
+            <div class="appendix-takeaway-text">
+              <strong>Sprint Contract 机制。</strong>在实现每个功能点之前，Generator 和 Evaluator 先协商"做完长什么样"——Generator 提出方案，Evaluator 审查方案，双方来回迭代直到达成一致。这避免了 Generator 理解偏差导致做出来的东西南辕北辙。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">4</div>
+            <div class="appendix-takeaway-text">
+              <strong>上下文重置 vs 压缩。</strong>Sonnet 4.5 存在"上下文焦虑"——接近上下文窗口限制时会草草收工。解决方案是完全清空上下文重新开始（重置），而非只压缩历史记录。升级到 Opus 4.5 后这个问题大幅缓解，可以不用重置直接持续工作。
+            </div>
+          </div>
+
+          <div class="appendix-takeaway">
+            <div class="appendix-takeaway-num">5</div>
+            <div class="appendix-takeaway-text">
+              <strong>20 分钟 vs 6 小时的天壤之别。</strong>Solo 方案（单 Agent）20 分钟完成、花费 $9，但输出基本没法用。Full Harness 方案 6 小时完成、花费 $200，输出达到可用水准。这和人类一样——考 60 分可能只需 3 天，但考 90 分可能需要一个月。
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="page-footer">
+      <p>视频来源：<a href="https://www.bilibili.com/video/BV12LR1B3EUt/" target="_blank" style="color:var(--accent); text-decoration:none;">BV12LR1B3EUt</a> · 马克的技术工作坊</p>
+      <p style="margin-top:4px;">本页面为视频文案结构化总结，仅供学习参考</p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+// 阅读进度条
+const progressBar = document.getElementById('progressBar');
+const sidebarProgressFill = document.getElementById('sidebarProgressFill');
+const sidebarProgressPct = document.getElementById('sidebarProgressPct');
+
+function updateProgress() {
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const progress = (scrollTop / scrollHeight) * 100;
+  progressBar.style.width = progress + '%';
+  sidebarProgressFill.style.width = progress + '%';
+  sidebarProgressPct.textContent = Math.round(progress) + '%';
+}
+
+window.addEventListener('scroll', updateProgress);
+
+// 章节入场动画
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+chapters.forEach(ch => observer.observe(ch));
+
+// ====== 侧边栏功能 ======
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+// 切换侧边栏
+function toggleSidebar() {
+  sidebar.classList.toggle('open');
+  sidebarOverlay.classList.toggle('active');
+}
+
+sidebarToggle.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', toggleSidebar);
+
+// 展开/收起子标题
+function toggleSub(el) {
+  const group = el.closest('.sidebar-chapter-group');
+  const subList = group.querySelector('.sidebar-sub-list');
+  const wasExpanded = subList.classList.contains('expanded');
+
+  // 收起所有其他组
+  document.querySelectorAll('.sidebar-sub-list.expanded').forEach(list => {
+    list.classList.remove('expanded');
+    list.closest('.sidebar-chapter-group').querySelector('.sidebar-chapter-link').classList.remove('active');
+  });
+
+  // 如果之前未展开，则展开当前组
+  if (!wasExpanded) {
+    subList.classList.add('expanded');
+    el.classList.add('active');
+  }
+
+  // 跳转到对应章节
+  const chapterId = group.dataset.chapter;
+  const target = document.getElementById(chapterId);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// 点击子标题跳转
+function navTo(el, chapterId) {
+  // 高亮当前子标题
+  document.querySelectorAll('.sidebar-sub-link.active').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+
+  const target = document.getElementById(chapterId);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// 滚动时自动高亮当前章节
+const chapterIds = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'appendix'];
+
+function updateActiveChapter() {
+  const scrollTop = window.scrollY + 120;
+  let currentChapter = chapterIds[0];
+
+  chapterIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollTop) {
+      currentChapter = id;
+    }
+  });
+
+  // 更新侧边栏高亮
+  document.querySelectorAll('.sidebar-chapter-group').forEach(group => {
+    const link = group.querySelector('.sidebar-chapter-link');
+    const subList = group.querySelector('.sidebar-sub-list');
+    if (group.dataset.chapter === currentChapter) {
+      link.classList.add('active');
+      subList.classList.add('expanded');
+    } else {
+      link.classList.remove('active');
+      subList.classList.remove('expanded');
+    }
+  });
+}
+
+window.addEventListener('scroll', updateActiveChapter);
+
+// 键盘快捷键：按 Escape 关闭侧边栏
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+    toggleSidebar();
+  }
+});
+
+// 初始化
+updateActiveChapter();
+updateProgress();
+</script>
+
+</body>
+</html>
